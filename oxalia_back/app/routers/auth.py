@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import get_current_user, require_role
 from app.database import get_db
+from app.models.user import Role, User
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair
 from app.schemas.user import UserCreate, UserOut
 from app.services import auth_service
@@ -74,3 +76,38 @@ async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)) -> T
 )
 async def logout(data: RefreshRequest, db: AsyncSession = Depends(get_db)) -> None:
     await auth_service.logout(db, data.refresh_token)
+
+
+@router.get(
+    "/me",
+    response_model=UserOut,
+    summary="Get the current authenticated user",
+    description=(
+        "Returns the profile of the user identified by the supplied bearer access token. "
+        "Requires a valid `Authorization: Bearer <access_token>` header."
+    ),
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Missing, invalid or expired access token"},
+    },
+)
+async def get_me(current_user: User = Depends(get_current_user)) -> UserOut:
+    return UserOut.model_validate(current_user)
+
+
+@router.get(
+    "/admin-check",
+    response_model=UserOut,
+    summary="Example admin-only endpoint (RBAC demo)",
+    description=(
+        "Demonstrates role-based access control: only users with the `admin` role may "
+        "access this endpoint. Intended as a template for future admin-only routes."
+    ),
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Missing, invalid or expired access token"},
+        status.HTTP_403_FORBIDDEN: {"description": "Authenticated user is not an admin"},
+    },
+)
+async def admin_check(
+    current_user: User = Depends(require_role(Role.ADMIN)),
+) -> UserOut:
+    return UserOut.model_validate(current_user)
