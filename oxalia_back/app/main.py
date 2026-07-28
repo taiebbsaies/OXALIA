@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.core.openapi import API_DESCRIPTION, TAGS_METADATA
 from app.routers.auth import router as auth_router
+from app.routers.exams import router as exams_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -20,6 +21,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(exams_router, prefix="/exams", tags=["exams"])
 
 
 @app.get(
