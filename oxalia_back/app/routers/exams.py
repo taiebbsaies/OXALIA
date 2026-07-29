@@ -1,9 +1,11 @@
+import uuid
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
 from app.database import get_db
-from app.models.exam import Exam
+from app.models.exam import Exam, ExamStatus
 from app.models.user import User
 from app.repositories import exam_repository, inference_result_repository
 from app.schemas.exam import ExamOut, InferenceResultOut
@@ -51,8 +53,6 @@ async def get_exam(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ExamOut:
-    import uuid
-
     exam = await exam_repository.get_by_id(db, uuid.UUID(exam_id))
     if exam is None or exam.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
@@ -70,11 +70,15 @@ async def get_exam_result(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> InferenceResultOut:
-    import uuid
-
     exam = await exam_repository.get_by_id(db, uuid.UUID(exam_id))
     if exam is None or exam.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found")
+
+    if exam.status == ExamStatus.FAILED:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Inference failed for this exam",
+        )
 
     result = await inference_result_repository.get_by_exam_id(db, exam.id)
     if result is None:
