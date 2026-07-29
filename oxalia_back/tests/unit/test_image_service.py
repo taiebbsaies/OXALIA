@@ -69,10 +69,10 @@ async def test_disallowed_declared_content_type_rejected(upload_dir):
 
 async def test_spoofed_content_type_rejected(upload_dir):
     """Client claims image/jpeg but the bytes are not a real image."""
-    fake_image = b"MZ" + b"\x00" * 64  # PE executable signature
+    fake_image = b"MZ" + b"\x00" * 64  
 
     with pytest.raises(HTTPException) as exc_info:
         await image_service.save_upload(make_upload(fake_image))
 
     assert exc_info.value.status_code == 415
-    assert not list(upload_dir.iterdir())  # nothing persisted on validation failure
+    assert not list(upload_dir.iterdir())  
