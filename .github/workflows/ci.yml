@@ -13,6 +13,22 @@ jobs:
     defaults:
       run:
         working-directory: oxalia_back
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: oxalia_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia_test
       JWT_SECRET_KEY: ci-test-secret
@@ -38,25 +54,33 @@ jobs:
       - name: Import check
         run: python -c "from app.main import app; print('OK')"
 
-      # When you add tests:
-      # - name: Run tests
-      #   run: pytest -q
-      #   env:
-      #     DATABASE_URL: ...
-      #     JWT_SECRET_KEY: test-secret
-      #     ...
+      - name: Run tests
+        run: pytest -q
 
-  # Optional later:
-  # frontend:
-  #   name: Frontend checks
-  #   runs-on: ubuntu-latest
-  #   defaults:
-  #     run:
-  #       working-directory: oxalia_front
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: subosito/flutter-action@v2
-  #       with:
-  #         flutter-version: "3.24.0"
-  #     - run: flutter pub get
-  #     - run: flutter analyze
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: oxalia_front
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Create placeholder .env
+        run: echo "API_BASE_URL=http://localhost:8000" > .env
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
