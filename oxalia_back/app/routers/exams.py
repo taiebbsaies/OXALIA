@@ -82,7 +82,5 @@ async def get_exam_result(
 
     result = await inference_result_repository.get_by_exam_id(db, exam.id)
     if result is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Result not ready yet"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Result not ready yet")
     return InferenceResultOut.model_validate(result)

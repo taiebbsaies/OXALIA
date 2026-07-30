@@ -58,7 +58,9 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)) -> Token
         "refresh token is rejected."
     ),
     responses={
-        status.HTTP_401_UNAUTHORIZED: {"description": "Refresh token is invalid, expired, or revoked"},
+        status.HTTP_401_UNAUTHORIZED: {
+            "description": "Refresh token is invalid, expired, or revoked"
+        },
     },
 )
 async def refresh(data: RefreshRequest, db: AsyncSession = Depends(get_db)) -> TokenPair:

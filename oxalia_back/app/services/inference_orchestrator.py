@@ -3,7 +3,7 @@ from uuid import UUID
 
 from app.core.stub_model_adapter import StubModelAdapter
 from app.database import AsyncSessionLocal
-from app.models.exam import Exam, ExamStatus
+from app.models.exam import ExamStatus
 from app.models.inference_result import InferenceResult
 from app.repositories import exam_repository, inference_result_repository
 

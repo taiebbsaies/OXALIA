@@ -26,6 +26,8 @@ TAGS_METADATA = [
     },
     {
         "name": "system",
-        "description": "Operational endpoints (health checks) used by orchestration and monitoring.",
+        "description": (
+            "Operational endpoints (health checks) used by orchestration and monitoring."
+        ),
     },
 ]

@@ -16,7 +16,7 @@ def _isolate_uploads_and_inference(monkeypatch, tmp_path):
     never touch the real DB session owned by the background task."""
     monkeypatch.setattr(settings, "UPLOAD_DIR", str(tmp_path))
 
-    async def _noop_inference(exam_id, image_path):  # noqa: ARG001
+    async def _noop_inference(exam_id, image_path):
         return None
 
     monkeypatch.setattr(exams_router, "run_inference", _noop_inference)

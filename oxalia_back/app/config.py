@@ -24,9 +24,11 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE_MB: int = 10
     ALLOWED_CONTENT_TYPES: str = "image/jpeg,image/png"
+
     @property
     def allowed_content_types_list(self) -> list[str]:
         return [t.strip() for t in self.ALLOWED_CONTENT_TYPES.split(",")]
+
 
 @lru_cache
 def get_settings() -> Settings:

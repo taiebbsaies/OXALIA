@@ -5,7 +5,6 @@ from fastapi import HTTPException, UploadFile, status
 
 from app.config import settings
 
-
 _MAGIC_BYTES: dict[bytes, str] = {
     b"\xff\xd8\xff": "image/jpeg",
     b"\x89PNG\r\n\x1a\n": "image/png",
@@ -68,4 +67,3 @@ async def save_upload(file: UploadFile) -> tuple[Path, int]:
 
     stored_path.write_bytes(contents)
     return stored_path, size_bytes
-    

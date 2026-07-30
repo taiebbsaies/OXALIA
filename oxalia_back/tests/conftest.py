@@ -45,7 +45,7 @@ async def db():
         await connection.begin_nested()
 
         @event.listens_for(session.sync_session, "after_transaction_end")
-        def restart_savepoint(sess, trans) -> None:  # noqa: ARG001
+        def restart_savepoint(sess, trans) -> None:
             if connection.closed:
                 return
             if not connection.in_nested_transaction():
@@ -64,8 +64,6 @@ async def client(db: AsyncSession):
         yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://testserver"
-    ) as c:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as c:
         yield c
     app.dependency_overrides.clear()
