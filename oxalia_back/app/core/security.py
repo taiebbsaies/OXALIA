@@ -4,7 +4,8 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import bcrypt
-from jose import JWTError, jwt
+import jwt
+from jwt import PyJWTError
 
 from app.config import settings
 from app.models.user import Role
@@ -27,7 +28,7 @@ def create_access_token(user_id: uuid.UUID, role: Role) -> str:
 def decode_access_token(token: str) -> dict:
     try:
         return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
-    except JWTError as exc:
+    except PyJWTError as exc:
         raise ValueError("Invalid or expired token") from exc
 
 
