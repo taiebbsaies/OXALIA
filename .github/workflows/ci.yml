@@ -56,10 +56,13 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
       - name: Lint
-        run: ruff check app tests
+        run: pip install ruff && ruff check app tests
+
       - name: Format check
         run: ruff format --check app tests
+
       - name: Security audit
         run: pip install pip-audit && pip-audit
 
