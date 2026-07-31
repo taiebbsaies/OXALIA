@@ -182,8 +182,9 @@ class _LoginViewState extends State<LoginView> {
                           children: [
                             const Expanded(child: Divider()),
                             Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: Text(
                                 'New to OXALIA 2D?',
                                 style: TextStyle(
@@ -200,10 +201,7 @@ class _LoginViewState extends State<LoginView> {
                           onPressed: () => context.go(AppRoutes.register),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(52),
-                            side: BorderSide(
-                              color: palette.cyan,
-                              width: 1.5,
-                            ),
+                            side: BorderSide(color: palette.cyan, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -271,7 +269,7 @@ class _GlowingLogo extends StatelessWidget {
             shape: BoxShape.circle,
             color: palette.background,
           ),
-          child: Image.asset('assets/logo1.png', fit: BoxFit.contain),
+          child: Image.asset('assets/logo.png', fit: BoxFit.contain),
         ),
       ),
     );
