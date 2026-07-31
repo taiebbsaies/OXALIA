@@ -1,8 +1,8 @@
-name: oxalia_front
+name: Oxalia
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -53,9 +53,28 @@ dependencies:
   # Image capture / gallery picking for exam uploads
   image_picker: ^1.1.2
 
+  # Animated splash screen (Lottie JSON animations)
+  lottie: ^3.3.1
+
+  # dotLottie player (.lottie files with embedded fonts/images)
+  dotlottie_flutter: ^0.1.5
+
+  # Animated tap transitions for action buttons
+  flutter_animated_button: ^2.0.4
+
+  # Animated bottom navigation bar
+  nav_bar: ^0.1.1
+
+  # Animated toggle for theme selection
+  animated_toggle_switch: ^0.8.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Native splash screen + launcher icon generators
+  flutter_native_splash: ^2.4.6
+  flutter_launcher_icons: ^0.14.3
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -69,7 +88,6 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
@@ -77,6 +95,8 @@ flutter:
 
   assets:
     - .env
+    - assets/
+    - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -103,3 +123,18 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Native splash (shown before the Flutter engine loads).
+# Regenerate with: dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#0A1628"
+  image: assets/logo1.png
+  android: true
+  ios: true
+  web: false
+
+# Launcher icons. Regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/logo.png

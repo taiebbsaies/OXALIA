@@ -1,10 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 
 import 'app.dart';
+import 'core/network/api_client.dart';
+import 'core/storage/token_storage.dart';
+import 'core/theme/theme_controller.dart';
+import 'data/repositories/auth_repository.dart';
+import 'data/services/auth_service.dart';
+import 'features/auth/viewmodel/auth_viewmodel.dart';
+import 'routing/app_router.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
-  runApp(const OxaliaApp());
+
+  final tokenStorage = TokenStorage();
+  final apiClient = ApiClient(tokenStorage: tokenStorage);
+  final authRepository = AuthRepository(
+    authService: AuthService(apiClient),
+    tokenStorage: tokenStorage,
+  );
+  final authViewModel = AuthViewModel(authRepository);
+  final themeController = ThemeController();
+
+  final router = buildRouter(authViewModel);
+
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<TokenStorage>.value(value: tokenStorage),
+        Provider<ApiClient>.value(value: apiClient),
+        Provider<AuthRepository>.value(value: authRepository),
+        ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
+        ChangeNotifierProvider<ThemeController>.value(value: themeController),
+      ],
+      child: OxaliaApp(router: router),
+    ),
+  );
+
+  // Validate any persisted session after the first frame; the router's
+  // redirect reacts to the resulting status change automatically.
+  await authViewModel.checkAuthStatus();
 }
