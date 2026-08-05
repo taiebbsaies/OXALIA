@@ -8,7 +8,7 @@ For the full project overview (backend + frontend), architecture, setup, and API
 
 ```bash
 flutter pub get
-# Configure API_BASE_URL in .env (see root README)
+# Configure API base URL in local .env (see root README)
 flutter run
 ```
 

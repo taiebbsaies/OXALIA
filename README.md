@@ -78,22 +78,7 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-Create `oxalia_back/.env` (never commit secrets):
-
-```env
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia
-JWT_SECRET_KEY=<strong-random-secret>
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=15
-REFRESH_TOKEN_EXPIRE_MINUTES=10080
-PROJECT_NAME=OXALIA Mobile Inference Platform API
-ENVIRONMENT=development
-UPLOAD_DIR=uploads
-MAX_UPLOAD_SIZE_MB=10
-ALLOWED_CONTENT_TYPES=image/jpeg,image/png
-```
-
-Start Postgres, then:
+Configure the local `.env` (never commit secrets), start Postgres, then:
 
 ```bash
 alembic upgrade head
@@ -121,18 +106,7 @@ cd oxalia_front
 flutter pub get
 ```
 
-Create `oxalia_front/.env` (bundled as an asset):
-
-```env
-# Android emulator → host machine
-API_BASE_URL=http://10.0.2.2:8000
-# iOS simulator
-# API_BASE_URL=http://127.0.0.1:8000
-# Physical device → your PC LAN IP
-# API_BASE_URL=http://192.168.x.x:8000
-```
-
-iOS already declares camera / photo library usage in `Info.plist`.
+Point the app at your API via local `.env` (never commit it). iOS already declares camera / photo library usage in `Info.plist`.
 
 ```bash
 flutter run
