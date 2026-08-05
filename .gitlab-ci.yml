@@ -1,0 +1,86 @@
+# GitLab CI — mirrors .github/workflows/ci.yml
+# Triggers: pushes and merge requests targeting main / develop
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+
+stages:
+  - check
+  - build
+
+# ---------------------------------------------------------------------------
+# Backend: import, pytest (Postgres service), ruff, pip-audit
+# ---------------------------------------------------------------------------
+backend:
+  stage: check
+  image: python:3.11-bookworm
+  services:
+    - name: postgres:16
+      alias: postgres
+      command: ["postgres", "-c", "fsync=off"]
+  variables:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_DB: oxalia_test
+    # GitLab services are reachable by hostname = service alias
+    DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/oxalia_test
+    JWT_SECRET_KEY: ci-test-secret-key-32-bytes-minimum!!
+    JWT_ALGORITHM: HS256
+    ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+    REFRESH_TOKEN_EXPIRE_MINUTES: "10080"
+    PROJECT_NAME: OXALIA API (CI)
+    ENVIRONMENT: test
+    FF_NETWORK_PER_BUILD: "true"
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq postgresql-client
+    - |
+      until pg_isready -h postgres -U postgres; do
+        echo "Waiting for Postgres..."
+        sleep 2
+      done
+    - cd oxalia_back
+    - python -m pip install --upgrade pip setuptools
+    - pip install -r requirements.txt
+  script:
+    - python -c "from app.main import app; print('OK')"
+    - pytest -q
+    - pip install ruff && ruff check app tests
+    - ruff format --check app tests
+    - pip install pip-audit && pip-audit
+
+# ---------------------------------------------------------------------------
+# Frontend: Flutter analyze + test
+# ---------------------------------------------------------------------------
+frontend:
+  stage: check
+  image: ghcr.io/cirruslabs/flutter:stable
+  before_script:
+    - cd oxalia_front
+    - echo "API_BASE_URL=http://localhost:8000" > .env
+    - flutter pub get
+  script:
+    - flutter analyze
+    - flutter test
+
+# ---------------------------------------------------------------------------
+# Docker: build backend image (no push)
+# ---------------------------------------------------------------------------
+docker-build:
+  stage: build
+  image: docker:24-cli
+  services:
+    - name: docker:24-dind
+      alias: docker
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: "/certs/client"
+  before_script:
+    - until docker info >/dev/null 2>&1; do sleep 1; done
+  script:
+    - docker build -t oxalia-back:ci -f oxalia_back/Dockerfile oxalia_back
+  needs: []
