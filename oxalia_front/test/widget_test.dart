@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oxalia_front/core/network/api_client.dart';
+import 'package:oxalia_front/core/theme/app_theme.dart';
 import 'package:oxalia_front/core/storage/token_storage.dart';
 import 'package:oxalia_front/data/repositories/auth_repository.dart';
 import 'package:oxalia_front/data/services/auth_service.dart';
@@ -24,7 +25,7 @@ AuthViewModel buildViewModel() {
 Widget wrap(Widget child, AuthViewModel viewModel) {
   return ChangeNotifierProvider<AuthViewModel>.value(
     value: viewModel,
-    child: MaterialApp(home: child),
+    child: MaterialApp(theme: AppTheme.dark, home: child),
   );
 }
 
@@ -37,20 +38,20 @@ void main() {
     testWidgets('renders email/password fields and sign-in button', (tester) async {
       await tester.pumpWidget(wrap(const LoginView(), buildViewModel()));
 
-      expect(find.widgetWithText(TextFormField, 'Email'), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'Password'), findsOneWidget);
-      expect(find.text('Sign in'), findsWidgets);
+      expect(find.byType(TextFormField), findsNWidgets(2));
+      expect(find.text('EMAIL'), findsOneWidget);
+      expect(find.text('PASSWORD'), findsOneWidget);
+      // AnimatedButton stacks the label twice (normal + selected states).
+      expect(find.text('Sign In'), findsNWidgets(2));
     });
 
     testWidgets('shows validation errors on invalid input', (tester) async {
       await tester.pumpWidget(wrap(const LoginView(), buildViewModel()));
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Email'),
-        'not-an-email',
-      );
-      await tester.tap(find.text('Sign in').last);
-      await tester.pump();
+      await tester.enterText(find.byType(TextFormField).at(0), 'not-an-email');
+      await tester.tap(find.text('Sign In').first);
+      // pumpAndSettle: AnimatedButton runs a 400ms sweep on tap.
+      await tester.pumpAndSettle();
 
       expect(find.text('Enter a valid email address'), findsOneWidget);
       expect(find.text('Password is required'), findsOneWidget);
@@ -61,24 +62,16 @@ void main() {
     testWidgets('rejects short passwords and mismatched confirmation', (tester) async {
       await tester.pumpWidget(wrap(const RegisterView(), buildViewModel()));
 
+      // Field order: full name, email, password, confirm password.
+      await tester.enterText(find.byType(TextFormField).at(0), 'Dr Test');
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Full name'),
-        'Dr Test',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Email'),
+        find.byType(TextFormField).at(1),
         'doc@oxalia.health',
       );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Password'),
-        'short',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Confirm password'),
-        'different',
-      );
-      await tester.tap(find.text('Create account').last);
-      await tester.pump();
+      await tester.enterText(find.byType(TextFormField).at(2), 'short');
+      await tester.enterText(find.byType(TextFormField).at(3), 'different');
+      await tester.tap(find.text('Create Account').first);
+      await tester.pumpAndSettle();
 
       expect(
         find.text('Password must be at least 8 characters'),
