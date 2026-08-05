@@ -61,9 +61,7 @@ async def list_exams(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[ExamOut]:
-    exams = await exam_repository.list_by_owner(
-        db, current_user.id, limit=limit, offset=offset
-    )
+    exams = await exam_repository.list_by_owner(db, current_user.id, limit=limit, offset=offset)
     return [ExamOut.model_validate(exam) for exam in exams]
 
 
@@ -78,9 +76,7 @@ async def get_exam_stats(
     current_user: User = Depends(get_current_user),
 ) -> ExamStatsOut:
     counts = await exam_repository.stats_by_owner(db, current_user.id)
-    model_versions = await inference_result_repository.model_version_counts(
-        db, current_user.id
-    )
+    model_versions = await inference_result_repository.model_version_counts(db, current_user.id)
     in_flight = counts[ExamStatus.PENDING] + counts[ExamStatus.PROCESSING]
     return ExamStatsOut(
         total=sum(counts.values()),

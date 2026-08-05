@@ -59,6 +59,10 @@ dependencies:
   # Liquid-fill progress indicator for the upload state
   fluid_progress_indicator: ^1.0.1
 
+  # Client-side PDF report generation + share/print sheet
+  pdf: ^3.11.3
+  printing: ^5.14.2
+
   # Animated splash screen (Lottie JSON animations)
   lottie: ^3.3.1
 

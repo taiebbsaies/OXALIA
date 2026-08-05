@@ -8,15 +8,11 @@ import '../../../data/models/inference_result.dart';
 import '../../../data/repositories/exam_repository.dart';
 
 enum AnalysisStep {
-  /// No image picked yet.
+  /// No image picked yet — scanner idle.
   idle,
 
-  /// Scan animation plays right after the capture, while the native
-  /// compressor normalizes the image.
+  /// Scan animation while the native compressor normalizes the image.
   scanning,
-
-  /// Image picked and preprocessed, waiting for the user to start.
-  ready,
 
   /// Multipart upload in flight (with retry inside the repository).
   uploading,
@@ -55,35 +51,45 @@ class AnalysisViewModel extends ChangeNotifier {
   double get uploadProgress => _uploadProgress;
 
   bool get isBusy =>
-      _step == AnalysisStep.uploading || _step == AnalysisStep.processing;
+      _step == AnalysisStep.scanning ||
+      _step == AnalysisStep.uploading ||
+      _step == AnalysisStep.processing;
 
+  /// Pick from camera or gallery, preprocess, then auto-start the pipeline.
   Future<void> pickImage(ImageSource source) async {
+    if (isBusy) return;
+
     final picked = await _picker.pickImage(source: source);
     if (picked == null) return;
 
-    // The scan animation covers the native compression, which is fast but
-    // not instant on large photos.
     _step = AnalysisStep.scanning;
     _errorMessage = null;
     _exam = null;
     _result = null;
+    _uploadProgress = 0;
     notifyListeners();
 
     try {
       final rawBytes = await picked.readAsBytes();
       _imageBytes = await ImagePreprocessor.normalize(rawBytes);
-      _step = AnalysisStep.ready;
     } catch (_) {
       _errorMessage = 'Unsupported image format. Pick a JPEG or PNG photo.';
       _step = AnalysisStep.failed;
+      notifyListeners();
+      return;
     }
+
     notifyListeners();
+    await startAnalysis();
   }
 
   /// Full pipeline: upload (with retry) → poll → fetch result.
   Future<void> startAnalysis() async {
     final bytes = _imageBytes;
-    if (bytes == null || isBusy) return;
+    if (bytes == null) return;
+    if (_step == AnalysisStep.uploading || _step == AnalysisStep.processing) {
+      return;
+    }
 
     _cancelRequested = false;
     _errorMessage = null;

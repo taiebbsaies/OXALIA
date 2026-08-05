@@ -167,32 +167,47 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// Full-width CTA under the stats. Keeps the mockup's dark surface at
-/// rest; a teal sweep plays on press, matching PrimaryButton's behavior.
+/// Full-width gradient CTA under the stats — matches PrimaryButton language.
 class _NewAnalysisButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return AnimatedButton(
-      width: double.infinity,
-      height: 52,
-      text: 'New Analysis',
-      onPress: () => context.push(AppRoutes.newAnalysis),
-      transitionType: TransitionType.BOTTOM_CENTER_ROUNDER,
-      backgroundColor: palette.surface,
-      selectedBackgroundColor: palette.teal,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: palette.border,
-      isReverse: true,
-      animationDuration: const Duration(milliseconds: 400),
-      textStyle: TextStyle(
-        color: palette.textPrimary,
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: palette.teal.withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      selectedTextColor: palette.onAccent,
+      child: AnimatedButton(
+        width: double.infinity,
+        height: 56,
+        text: 'New Analysis',
+        onPress: () => context.push(AppRoutes.newAnalysis),
+        transitionType: TransitionType.LEFT_TO_RIGHT,
+        gradient: LinearGradient(
+          colors: [palette.teal, palette.cyan],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        selectedBackgroundColor: palette.cyan,
+        borderRadius: 12,
+        borderWidth: 0,
+        isReverse: true,
+        animationDuration: const Duration(milliseconds: 400),
+        textStyle: TextStyle(
+          color: palette.onAccent,
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.3,
+        ),
+        selectedTextColor: palette.onAccent,
+      ),
     );
   }
 }
