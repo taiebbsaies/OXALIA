@@ -1,6 +1,3 @@
-import asyncio
-
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
@@ -13,13 +10,6 @@ from app.models import RefreshToken, User  # noqa: F401 — register models on B
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia_test"
 
 engine = create_async_engine(TEST_DATABASE_URL, echo=False)
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
@@ -45,7 +35,7 @@ async def db():
         await connection.begin_nested()
 
         @event.listens_for(session.sync_session, "after_transaction_end")
-        def restart_savepoint(sess, trans) -> None:  # noqa: ARG001
+        def restart_savepoint(sess, trans) -> None:
             if connection.closed:
                 return
             if not connection.in_nested_transaction():
@@ -64,8 +54,6 @@ async def client(db: AsyncSession):
         yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://testserver"
-    ) as c:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as c:
         yield c
     app.dependency_overrides.clear()

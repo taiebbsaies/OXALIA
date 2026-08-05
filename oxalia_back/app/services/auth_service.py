@@ -19,9 +19,7 @@ from app.schemas.user import UserCreate
 async def register(db: AsyncSession, data: UserCreate) -> User:
     existing = await user_repository.get_by_email(db, data.email)
     if existing is not None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="Email already registered"
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
     user = User(
         email=data.email,

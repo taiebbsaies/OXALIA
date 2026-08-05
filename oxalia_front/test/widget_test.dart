@@ -1,30 +1,83 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oxalia_front/core/network/api_client.dart';
+import 'package:oxalia_front/core/theme/app_theme.dart';
+import 'package:oxalia_front/core/storage/token_storage.dart';
+import 'package:oxalia_front/data/repositories/auth_repository.dart';
+import 'package:oxalia_front/data/services/auth_service.dart';
+import 'package:oxalia_front/features/auth/view/login_view.dart';
+import 'package:oxalia_front/features/auth/view/register_view.dart';
+import 'package:oxalia_front/features/auth/viewmodel/auth_viewmodel.dart';
+import 'package:provider/provider.dart';
 
-import 'package:oxalia_front/main.dart';
+/// Builds the real dependency chain. No network call is made as long as
+/// no form submission succeeds — validators run purely client-side.
+AuthViewModel buildViewModel() {
+  final tokenStorage = TokenStorage();
+  final repository = AuthRepository(
+    authService: AuthService(ApiClient(tokenStorage: tokenStorage)),
+    tokenStorage: tokenStorage,
+  );
+  return AuthViewModel(repository);
+}
+
+Widget wrap(Widget child, AuthViewModel viewModel) {
+  return ChangeNotifierProvider<AuthViewModel>.value(
+    value: viewModel,
+    child: MaterialApp(theme: AppTheme.dark, home: child),
+  );
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  setUpAll(() {
+    dotenv.testLoad(fileInput: 'API_BASE_URL=http://localhost:8000');
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  group('LoginView', () {
+    testWidgets('renders email/password fields and sign-in button', (tester) async {
+      await tester.pumpWidget(wrap(const LoginView(), buildViewModel()));
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(find.byType(TextFormField), findsNWidgets(2));
+      expect(find.text('EMAIL'), findsOneWidget);
+      expect(find.text('PASSWORD'), findsOneWidget);
+      // AnimatedButton stacks the label twice (normal + selected states).
+      expect(find.text('Sign In'), findsNWidgets(2));
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('shows validation errors on invalid input', (tester) async {
+      await tester.pumpWidget(wrap(const LoginView(), buildViewModel()));
+
+      await tester.enterText(find.byType(TextFormField).at(0), 'not-an-email');
+      await tester.tap(find.text('Sign In').first);
+      // pumpAndSettle: AnimatedButton runs a 400ms sweep on tap.
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter a valid email address'), findsOneWidget);
+      expect(find.text('Password is required'), findsOneWidget);
+    });
+  });
+
+  group('RegisterView', () {
+    testWidgets('rejects short passwords and mismatched confirmation', (tester) async {
+      await tester.pumpWidget(wrap(const RegisterView(), buildViewModel()));
+
+      // Field order: full name, email, password, confirm password.
+      await tester.enterText(find.byType(TextFormField).at(0), 'Dr Test');
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'doc@oxalia.health',
+      );
+      await tester.enterText(find.byType(TextFormField).at(2), 'short');
+      await tester.enterText(find.byType(TextFormField).at(3), 'different');
+      await tester.tap(find.text('Create Account').first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Password must be at least 8 characters'),
+        findsOneWidget,
+      );
+      expect(find.text('Passwords do not match'), findsOneWidget);
+    });
   });
 }

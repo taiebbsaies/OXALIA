@@ -5,6 +5,7 @@ oxalia_back/**/__pycache__/
 oxalia_back/.pytest_cache/
 oxalia_back/.mypy_cache/
 oxalia_back/*.pyc
+oxalia_back/uploads/
 
 # Env / secrets — NEVER commit these
 .env
