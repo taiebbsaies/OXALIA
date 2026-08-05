@@ -26,6 +26,10 @@
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
+		<key>NSCameraUsageDescription</key>
+		<string>OXALIA needs camera access to capture X-ray images for analysis.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>OXALIA needs photo library access to select X-ray images for analysis.</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

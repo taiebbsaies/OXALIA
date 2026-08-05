@@ -7,7 +7,9 @@ import 'core/network/api_client.dart';
 import 'core/storage/token_storage.dart';
 import 'core/theme/theme_controller.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/exam_repository.dart';
 import 'data/services/auth_service.dart';
+import 'data/services/exam_service.dart';
 import 'features/auth/viewmodel/auth_viewmodel.dart';
 import 'routing/app_router.dart';
 
@@ -21,6 +23,7 @@ Future<void> main() async {
     authService: AuthService(apiClient),
     tokenStorage: tokenStorage,
   );
+  final examRepository = ExamRepository(examService: ExamService(apiClient));
   final authViewModel = AuthViewModel(authRepository);
   final themeController = ThemeController();
 
@@ -32,6 +35,7 @@ Future<void> main() async {
         Provider<TokenStorage>.value(value: tokenStorage),
         Provider<ApiClient>.value(value: apiClient),
         Provider<AuthRepository>.value(value: authRepository),
+        Provider<ExamRepository>.value(value: examRepository),
         ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
         ChangeNotifierProvider<ThemeController>.value(value: themeController),
       ],

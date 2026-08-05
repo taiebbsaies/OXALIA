@@ -12,6 +12,9 @@ class ApiEndpoints {
 
   // Exams
   static const String examUpload = '/exams/upload';
+  static const String exams = '/exams';
+  static const String examStats = '/exams/stats';
   static String examById(String examId) => '/exams/$examId';
   static String examResult(String examId) => '/exams/$examId/result';
+  static String examImage(String examId) => '/exams/$examId/image';
 }

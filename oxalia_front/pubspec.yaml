@@ -53,6 +53,12 @@ dependencies:
   # Image capture / gallery picking for exam uploads
   image_picker: ^1.1.2
 
+  # Native client-side image compression (HEIC -> JPEG, resize, EXIF strip)
+  flutter_image_compress: ^2.5.1
+
+  # Liquid-fill progress indicator for the upload state
+  fluid_progress_indicator: ^1.0.1
+
   # Animated splash screen (Lottie JSON animations)
   lottie: ^3.3.1
 

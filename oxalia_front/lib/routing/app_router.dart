@@ -1,10 +1,18 @@
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../data/repositories/exam_repository.dart';
+import '../features/analysis/view/new_analysis_view.dart';
+import '../features/analysis/viewmodel/analysis_viewmodel.dart';
 import '../features/auth/view/login_view.dart';
 import '../features/auth/view/register_view.dart';
 import '../features/auth/viewmodel/auth_viewmodel.dart';
+import '../features/exam_detail/view/exam_detail_view.dart';
+import '../features/exam_detail/viewmodel/exam_detail_viewmodel.dart';
 import '../features/history/view/history_view.dart';
+import '../features/history/viewmodel/history_viewmodel.dart';
 import '../features/home/view/home_view.dart';
+import '../features/home/viewmodel/home_viewmodel.dart';
 import '../features/intro/view/intro_view.dart';
 import '../features/navigation/view/main_shell.dart';
 import '../features/profile/view/profile_view.dart';
@@ -17,7 +25,7 @@ abstract final class AppRoutes {
   static const String home = '/home';
   static const String history = '/history';
   static const String profile = '/profile';
-  static const String examUpload = '/exams/upload';
+  static const String newAnalysis = '/exams/new';
   static String examDetail(String examId) => '/exams/$examId';
 }
 
@@ -71,6 +79,25 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
         path: AppRoutes.register,
         builder: (context, state) => const RegisterView(),
       ),
+      // Full-screen capture flow, pushed on top of the tab shell.
+      // A fresh ViewModel per navigation guarantees no stale exam state.
+      GoRoute(
+        path: AppRoutes.newAnalysis,
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => AnalysisViewModel(context.read<ExamRepository>()),
+          child: const NewAnalysisView(),
+        ),
+      ),
+      GoRoute(
+        path: '/exams/:examId',
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => ExamDetailViewModel(
+            context.read<ExamRepository>(),
+            state.pathParameters['examId']!,
+          )..load(),
+          child: const ExamDetailView(),
+        ),
+      ),
       // Main tabs share a persistent bottom navigation bar.
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -80,7 +107,11 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
             routes: [
               GoRoute(
                 path: AppRoutes.home,
-                builder: (context, state) => const HomeView(),
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (_) =>
+                      HomeViewModel(context.read<ExamRepository>())..load(),
+                  child: const HomeView(),
+                ),
               ),
             ],
           ),
@@ -88,7 +119,12 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
             routes: [
               GoRoute(
                 path: AppRoutes.history,
-                builder: (context, state) => const HistoryView(),
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (_) =>
+                      HistoryViewModel(context.read<ExamRepository>())
+                        ..load(),
+                  child: const HistoryView(),
+                ),
               ),
             ],
           ),
