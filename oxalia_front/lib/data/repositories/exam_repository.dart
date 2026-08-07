@@ -29,7 +29,7 @@ class ExamRepository {
 
   Future<Exam> uploadExam({
     required Uint8List imageBytes,
-    required String filename,
+    required String patientName,
     void Function(int sent, int total)? onSendProgress,
   }) async {
     DioException? lastError;
@@ -41,7 +41,7 @@ class ExamRepository {
       try {
         return await _examService.uploadExam(
           imageBytes: imageBytes,
-          filename: filename,
+          patientName: patientName,
           onSendProgress: onSendProgress,
         );
       } on DioException catch (e) {

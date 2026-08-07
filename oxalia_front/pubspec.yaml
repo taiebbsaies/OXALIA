@@ -56,6 +56,9 @@ dependencies:
   # Native client-side image compression (HEIC -> JPEG, resize, EXIF strip)
   flutter_image_compress: ^2.5.1
 
+  # Interactive crop frame with draggable corners (finger resize)
+  crop_your_image: ^2.0.0
+
   # Liquid-fill progress indicator for the upload state
   fluid_progress_indicator: ^1.0.1
 

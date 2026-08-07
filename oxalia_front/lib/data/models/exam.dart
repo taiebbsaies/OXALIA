@@ -13,6 +13,7 @@ enum ExamStatus {
 class Exam {
   const Exam({
     required this.id,
+    required this.patientName,
     required this.originalFilename,
     required this.contentType,
     required this.sizeBytes,
@@ -21,6 +22,7 @@ class Exam {
   });
 
   final String id;
+  final String patientName;
   final String originalFilename;
   final String contentType;
   final int sizeBytes;
@@ -30,6 +32,8 @@ class Exam {
   factory Exam.fromJson(Map<String, dynamic> json) {
     return Exam(
       id: json['id'] as String,
+      patientName: json['patient_name'] as String? ??
+          (json['original_filename'] as String? ?? 'Unknown'),
       originalFilename: json['original_filename'] as String,
       contentType: json['content_type'] as String,
       sizeBytes: json['size_bytes'] as int,

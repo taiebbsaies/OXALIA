@@ -1,7 +1,16 @@
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +22,7 @@ from app.repositories import exam_repository, inference_result_repository
 from app.schemas.exam import ExamOut, ExamStatsOut, InferenceResultOut
 from app.services import image_service
 from app.services.inference_orchestrator import run_inference
+from app.services.patient_naming import filename_from_patient_name, normalize_patient_name
 
 router = APIRouter()
 
@@ -24,20 +34,30 @@ router = APIRouter()
     summary="Upload an X-ray image for analysis",
     description=(
         "Validates and stores the uploaded image, then schedules asynchronous "
-        "inference in the background. Poll GET /exams/{id}/result for the outcome."
+        "inference in the background. Poll GET /exams/{id}/result for the outcome. "
+        "Requires a patient_name form field used as the exam display name."
     ),
 )
 async def upload_exam(
     background_tasks: BackgroundTasks,
     file: UploadFile,
+    patient_name: str = Form(..., min_length=1, max_length=255),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ExamOut:
+    cleaned_name = normalize_patient_name(patient_name)
+    if not cleaned_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Patient name is required",
+        )
+
     stored_path, size_bytes = await image_service.save_upload(file)
 
     exam = Exam(
         owner_id=current_user.id,
-        original_filename=file.filename or "unknown",
+        patient_name=cleaned_name,
+        original_filename=filename_from_patient_name(cleaned_name),
         storage_path=str(stored_path),
         content_type=file.content_type or "application/octet-stream",
         size_bytes=size_bytes,

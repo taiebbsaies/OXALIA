@@ -35,6 +35,7 @@ class ReportPdfBuilder {
           ),
           pw.SizedBox(height: 24),
           _metaRow('Exam ID', exam.id),
+          _metaRow('Patient', exam.patientName),
           _metaRow('File', exam.originalFilename),
           _metaRow('Date', exam.createdAt.toLocal().toIso8601String()),
           _metaRow('Model', result.modelVersion),

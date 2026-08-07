@@ -14,6 +14,9 @@ enum AnalysisStep {
   /// Scan animation while the native compressor normalizes the image.
   scanning,
 
+  /// Image loaded — user drags crop corners before upload.
+  resizing,
+
   /// Multipart upload in flight (with retry inside the repository).
   uploading,
 
@@ -34,18 +37,30 @@ class AnalysisViewModel extends ChangeNotifier {
   final ImagePicker _picker = ImagePicker();
 
   AnalysisStep _step = AnalysisStep.idle;
+  Uint8List? _sourceBytes;
   Uint8List? _imageBytes;
   String? _errorMessage;
   Exam? _exam;
   InferenceResult? _result;
   bool _cancelRequested = false;
   double _uploadProgress = 0;
+  String _patientName = '';
+  bool _applyingCrop = false;
 
   AnalysisStep get step => _step;
+
+  /// Bytes shown after crop/upload; during [AnalysisStep.resizing] use
+  /// [sourceBytes] for the interactive crop widget.
   Uint8List? get imageBytes => _imageBytes;
+
+  /// Full working image the user crops with their fingers.
+  Uint8List? get sourceBytes => _sourceBytes;
+
   String? get errorMessage => _errorMessage;
   Exam? get exam => _exam;
   InferenceResult? get result => _result;
+  String get patientName => _patientName;
+  bool get applyingCrop => _applyingCrop;
 
   /// Upload completion ratio (0.0 – 1.0) reported by Dio's send progress.
   double get uploadProgress => _uploadProgress;
@@ -53,13 +68,35 @@ class AnalysisViewModel extends ChangeNotifier {
   bool get isBusy =>
       _step == AnalysisStep.scanning ||
       _step == AnalysisStep.uploading ||
-      _step == AnalysisStep.processing;
+      _step == AnalysisStep.processing ||
+      _applyingCrop;
 
-  /// Pick from camera or gallery, preprocess, then auto-start the pipeline.
+  bool get canCapture =>
+      !isBusy &&
+      _patientName.trim().isNotEmpty &&
+      (_step == AnalysisStep.idle || _step == AnalysisStep.failed);
+
+  void setPatientName(String value) {
+    if (_patientName == value) return;
+    _patientName = value;
+    notifyListeners();
+  }
+
+  /// Pick from camera or gallery, normalize for preview, then wait for
+  /// the user to drag-crop before upload.
   Future<void> pickImage(ImageSource source) async {
-    if (isBusy) return;
+    if (!canCapture) {
+      _errorMessage = 'Enter the patient name before capturing.';
+      notifyListeners();
+      return;
+    }
 
-    final picked = await _picker.pickImage(source: source);
+    final picked = await _picker.pickImage(
+      source: source,
+      maxWidth: ImagePreprocessor.previewMaxDimension.toDouble(),
+      maxHeight: ImagePreprocessor.previewMaxDimension.toDouble(),
+      imageQuality: 95,
+    );
     if (picked == null) return;
 
     _step = AnalysisStep.scanning;
@@ -67,20 +104,81 @@ class AnalysisViewModel extends ChangeNotifier {
     _exam = null;
     _result = null;
     _uploadProgress = 0;
+    _sourceBytes = null;
+    _imageBytes = null;
     notifyListeners();
 
     try {
       final rawBytes = await picked.readAsBytes();
-      _imageBytes = await ImagePreprocessor.normalize(rawBytes);
+      _sourceBytes = await ImagePreprocessor.normalize(
+        rawBytes,
+        maxEdge: ImagePreprocessor.previewMaxDimension,
+      );
+      _imageBytes = _sourceBytes;
+      _step = AnalysisStep.resizing;
     } catch (_) {
       _errorMessage = 'Unsupported image format. Pick a JPEG or PNG photo.';
       _step = AnalysisStep.failed;
+    }
+    notifyListeners();
+  }
+
+  /// Discard the current preview and return to the capture screen.
+  void discardImage() {
+    if (_applyingCrop ||
+        _step == AnalysisStep.uploading ||
+        _step == AnalysisStep.processing) {
+      return;
+    }
+    _sourceBytes = null;
+    _imageBytes = null;
+    _errorMessage = null;
+    _exam = null;
+    _result = null;
+    _uploadProgress = 0;
+    _step = AnalysisStep.idle;
+    notifyListeners();
+  }
+
+  /// Called when the crop widget finishes; compresses then uploads.
+  Future<void> applyCroppedAndUpload(Uint8List croppedBytes) async {
+    if (_step != AnalysisStep.resizing) return;
+
+    final name = _patientName.trim();
+    if (name.isEmpty) {
+      _errorMessage = 'Enter the patient name before capturing.';
       notifyListeners();
       return;
     }
 
+    _applyingCrop = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      _imageBytes = await ImagePreprocessor.normalize(croppedBytes);
+    } catch (_) {
+      _applyingCrop = false;
+      _errorMessage = 'Could not process the cropped image. Try again.';
+      notifyListeners();
+      return;
+    }
+
+    _applyingCrop = false;
     await startAnalysis();
+  }
+
+  void setCropError(String message) {
+    _applyingCrop = false;
+    _errorMessage = message;
+    notifyListeners();
+  }
+
+  void beginCrop() {
+    if (_applyingCrop || _step != AnalysisStep.resizing) return;
+    _applyingCrop = true;
+    _errorMessage = null;
+    notifyListeners();
   }
 
   /// Full pipeline: upload (with retry) → poll → fetch result.
@@ -88,6 +186,14 @@ class AnalysisViewModel extends ChangeNotifier {
     final bytes = _imageBytes;
     if (bytes == null) return;
     if (_step == AnalysisStep.uploading || _step == AnalysisStep.processing) {
+      return;
+    }
+
+    final name = _patientName.trim();
+    if (name.isEmpty) {
+      _errorMessage = 'Enter the patient name before capturing.';
+      _step = AnalysisStep.failed;
+      notifyListeners();
       return;
     }
 
@@ -100,7 +206,7 @@ class AnalysisViewModel extends ChangeNotifier {
     try {
       _exam = await _repository.uploadExam(
         imageBytes: bytes,
-        filename: 'exam.jpg',
+        patientName: name,
         onSendProgress: (sent, total) {
           if (total > 0) {
             _uploadProgress = sent / total;
@@ -138,11 +244,14 @@ class AnalysisViewModel extends ChangeNotifier {
   void reset() {
     _cancelRequested = true;
     _step = AnalysisStep.idle;
+    _sourceBytes = null;
     _imageBytes = null;
     _errorMessage = null;
     _exam = null;
     _result = null;
     _uploadProgress = 0;
+    _patientName = '';
+    _applyingCrop = false;
     notifyListeners();
   }
 }

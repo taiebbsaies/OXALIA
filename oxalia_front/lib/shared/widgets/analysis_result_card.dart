@@ -435,6 +435,7 @@ class _WhiteResultPanel extends StatelessWidget {
                   const SizedBox(height: 8),
                 ],
                 const Divider(height: 24, color: Color(0xFFE5E7EB)),
+                _MetaLine(label: 'Patient', value: exam.patientName),
                 _MetaLine(label: 'Model Version', value: result.modelVersion),
                 _MetaLine(
                   label: 'Exam ID',

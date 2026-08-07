@@ -10,6 +10,7 @@ class ExamOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    patient_name: str
     original_filename: str
     content_type: str
     size_bytes: int

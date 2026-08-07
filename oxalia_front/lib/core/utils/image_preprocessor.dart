@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
-/// Client-side preprocessing before upload: normalizes any picked image
-/// into a bounded-size JPEG.
+/// Client-side preprocessing before upload: downscales and re-encodes
+/// any picked image into a bounded-size JPEG.
 ///
 /// Uses platform-native codecs (Kotlin/Swift) instead of a pure-Dart
 /// decoder: dramatically faster on 12MP+ photos, and it transparently
@@ -12,22 +12,29 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 class ImagePreprocessor {
   ImagePreprocessor._();
 
-  /// Shortest edge of the output, matching the model's input window.
-  static const int minDimension = 1024;
+  /// Longest edge of the final upload payload.
+  /// Despite the compressor API names (`minWidth` / `minHeight`), these
+  /// values act as *maximum* dimensions: larger images are scaled down.
+  static const int maxDimension = 1024;
+
+  /// Working copy kept for the interactive crop step.
+  static const int previewMaxDimension = 1600;
+
   static const int jpegQuality = 85;
 
-  /// Returns normalized JPEG bytes.
-  ///
-  /// EXIF metadata is stripped: camera photos embed GPS coordinates and
-  /// device identifiers that must not leave the device in a medical app.
-  static Future<Uint8List> normalize(Uint8List bytes) {
+  /// HEIC/PNG → JPEG, EXIF stripped, bounded by [maxEdge].
+  static Future<Uint8List> normalize(
+    Uint8List bytes, {
+    int maxEdge = maxDimension,
+  }) {
     return FlutterImageCompress.compressWithList(
       bytes,
-      minWidth: minDimension,
-      minHeight: minDimension,
+      minWidth: maxEdge,
+      minHeight: maxEdge,
       quality: jpegQuality,
       format: CompressFormat.jpeg,
       keepExif: false,
+      autoCorrectionAngle: true,
     );
   }
 }

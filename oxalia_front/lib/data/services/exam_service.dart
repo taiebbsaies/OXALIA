@@ -20,13 +20,14 @@ class ExamService {
   /// [onSendProgress] reports (sent, total) bytes for the progress UI.
   Future<Exam> uploadExam({
     required Uint8List imageBytes,
-    required String filename,
+    required String patientName,
     void Function(int sent, int total)? onSendProgress,
   }) async {
     final formData = FormData.fromMap({
+      'patient_name': patientName,
       'file': MultipartFile.fromBytes(
         imageBytes,
-        filename: filename,
+        filename: '${patientName.replaceAll(RegExp(r"\s+"), "_")}.jpg',
         contentType: DioMediaType('image', 'jpeg'),
       ),
     });
