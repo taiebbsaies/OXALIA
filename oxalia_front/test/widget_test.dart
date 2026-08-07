@@ -69,7 +69,12 @@ void main() {
         'doc@oxalia.health',
       );
       await tester.enterText(find.byType(TextFormField).at(2), 'short');
+      await tester.pump();
       await tester.enterText(find.byType(TextFormField).at(3), 'different');
+
+      // Strength checklist grows the form — scroll the submit button on-screen.
+      await tester.ensureVisible(find.text('Create Account').first);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Create Account').first);
       await tester.pumpAndSettle();
 
