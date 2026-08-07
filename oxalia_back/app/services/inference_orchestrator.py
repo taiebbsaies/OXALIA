@@ -5,10 +5,46 @@ from app.core.stub_model_adapter import StubModelAdapter
 from app.database import AsyncSessionLocal
 from app.models.exam import ExamStatus
 from app.models.inference_result import InferenceResult
-from app.repositories import exam_repository, inference_result_repository
+from app.repositories import device_token_repository, exam_repository, inference_result_repository
+from app.services import fcm_service
 
 # Swap this single line later to plug in the real OXALIA 2D adapter.
 model_adapter = StubModelAdapter()
+
+
+async def _notify_exam_owner(
+    db,
+    *,
+    owner_id: UUID,
+    exam_id: UUID,
+    patient_name: str,
+    success: bool,
+) -> None:
+    tokens = await device_token_repository.list_tokens_for_user(db, owner_id)
+    if not tokens:
+        return
+
+    if success:
+        title = "Analysis ready"
+        body = f"Results for {patient_name} are ready to review."
+        status = "completed"
+    else:
+        title = "Analysis failed"
+        body = f"Analysis for {patient_name} could not be completed."
+        status = "failed"
+
+    stale = fcm_service.send_to_tokens(
+        tokens,
+        title=title,
+        body=body,
+        data={
+            "exam_id": str(exam_id),
+            "type": "exam_status",
+            "status": status,
+        },
+    )
+    if stale:
+        await device_token_repository.delete_tokens(db, stale)
 
 
 async def run_inference(exam_id: UUID, image_path: Path) -> None:
@@ -31,6 +67,20 @@ async def run_inference(exam_id: UUID, image_path: Path) -> None:
             )
             await inference_result_repository.create(db, result)
             await exam_repository.update_status(db, exam, ExamStatus.COMPLETED)
+            await _notify_exam_owner(
+                db,
+                owner_id=exam.owner_id,
+                exam_id=exam.id,
+                patient_name=exam.patient_name,
+                success=True,
+            )
         except Exception:
             await exam_repository.update_status(db, exam, ExamStatus.FAILED)
+            await _notify_exam_owner(
+                db,
+                owner_id=exam.owner_id,
+                exam_id=exam.id,
+                patient_name=exam.patient_name,
+                success=False,
+            )
             raise

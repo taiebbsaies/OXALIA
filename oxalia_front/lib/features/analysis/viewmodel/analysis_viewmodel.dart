@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/errors/api_exception.dart';
+import '../../../core/notifications/notification_inbox.dart';
 import '../../../core/utils/image_preprocessor.dart';
 import '../../../data/models/exam.dart';
 import '../../../data/models/inference_result.dart';
@@ -31,9 +32,11 @@ enum AnalysisStep {
 }
 
 class AnalysisViewModel extends ChangeNotifier {
-  AnalysisViewModel(this._repository);
+  AnalysisViewModel(this._repository, {NotificationInbox? notificationInbox})
+      : _notificationInbox = notificationInbox;
 
   final ExamRepository _repository;
+  final NotificationInbox? _notificationInbox;
   final ImagePicker _picker = ImagePicker();
 
   AnalysisStep _step = AnalysisStep.idle;
@@ -226,9 +229,21 @@ class AnalysisViewModel extends ChangeNotifier {
       _result = await _repository.getResult(completed.id);
 
       _step = AnalysisStep.completed;
+      await _notificationInbox?.addAnalysisUpdate(
+        title: 'Analysis ready',
+        body: 'Results for $name are ready to review.',
+        examId: completed.id,
+        status: 'completed',
+      );
     } on ApiException catch (e) {
       _errorMessage = e.message;
       _step = AnalysisStep.failed;
+      await _notificationInbox?.addAnalysisUpdate(
+        title: 'Analysis failed',
+        body: e.message,
+        examId: _exam?.id,
+        status: 'failed',
+      );
     }
     notifyListeners();
   }

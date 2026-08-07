@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:password_strength_checker/password_strength_checker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/oxalia_password_strength.dart';
 import '../../../routing/app_router.dart';
 import '../../../shared/widgets/ecg_line.dart';
 import '../../../shared/widgets/field_label.dart';
@@ -22,16 +24,32 @@ class _RegisterViewState extends State<RegisterView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _strengthNotifier = ValueNotifier<OxaliaPasswordStrength?>(null);
   bool _obscurePassword = true;
 
   static final _emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   @override
+  void initState() {
+    super.initState();
+    _passwordController.addListener(_onPasswordChanged);
+  }
+
+  void _onPasswordChanged() {
+    _strengthNotifier.value = OxaliaPasswordStrength.calculate(
+      text: _passwordController.text,
+    );
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    _passwordController.removeListener(_onPasswordChanged);
     _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _strengthNotifier.dispose();
     super.dispose();
   }
 
@@ -57,6 +75,7 @@ class _RegisterViewState extends State<RegisterView> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<AuthViewModel>();
     final palette = context.palette;
+    final password = _passwordController.text;
 
     return Scaffold(
       body: Stack(
@@ -157,17 +176,27 @@ class _RegisterViewState extends State<RegisterView> {
                               ),
                             ),
                           ),
-                          // Mirrors the backend constraint: min_length=8.
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Password is required';
-                            }
-                            if (value.length < 8) {
-                              return 'Password must be at least 8 characters';
-                            }
-                            return null;
-                          },
+                          validator: OxaliaPasswordStrength.validatePolicy,
                         ),
+                        if (password.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          PasswordStrengthChecker<OxaliaPasswordStrength>(
+                            strength: _strengthNotifier,
+                            configuration: PasswordStrengthCheckerConfiguration(
+                              height: 8,
+                              inactiveBorderColor: palette.border,
+                              borderColor: palette.border,
+                              hasBorder: false,
+                              externalBorderRadius: BorderRadius.circular(8),
+                              internalBorderRadius: BorderRadius.circular(8),
+                              statusMargin: const EdgeInsets.only(top: 8),
+                              animationDuration:
+                                  const Duration(milliseconds: 400),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _PasswordRulesChecklist(password: password),
+                        ],
                         const SizedBox(height: 20),
                         const FieldLabel('CONFIRM PASSWORD'),
                         TextFormField(
@@ -178,10 +207,15 @@ class _RegisterViewState extends State<RegisterView> {
                             hintText: '••••••••',
                             prefixIcon: Icon(Icons.lock_outline),
                           ),
-                          validator: (value) =>
-                              value != _passwordController.text
-                                  ? 'Passwords do not match'
-                                  : null,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Confirm your password';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: 8),
                         if (viewModel.errorMessage != null)
@@ -224,6 +258,64 @@ class _RegisterViewState extends State<RegisterView> {
             bottom: 0,
             child: IgnorePointer(child: EcgLine()),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PasswordRulesChecklist extends StatelessWidget {
+  const _PasswordRulesChecklist({required this.password});
+
+  final String password;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final rules = <(String, bool)>[
+      ('At least 8 characters', OxaliaPasswordStrength.hasMinLength(password)),
+      ('One uppercase letter', OxaliaPasswordStrength.hasUppercase(password)),
+      ('One lowercase letter', OxaliaPasswordStrength.hasLowercase(password)),
+      ('One number', OxaliaPasswordStrength.hasDigit(password)),
+      (
+        'One special character',
+        OxaliaPasswordStrength.hasSpecial(password),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: palette.surface.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        children: [
+          for (final (label, ok) in rules)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  Icon(
+                    ok ? Icons.check_circle : Icons.radio_button_unchecked,
+                    size: 16,
+                    color: ok ? palette.teal : palette.hint,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: ok ? palette.textPrimary : palette.textSecondary,
+                        fontSize: 12,
+                        fontWeight: ok ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

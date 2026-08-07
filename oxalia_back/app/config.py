@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_MB: int = 10
     ALLOWED_CONTENT_TYPES: str = "image/jpeg,image/png"
 
+    # Firebase Cloud Messaging (optional — push is a no-op if unset)
+    FIREBASE_CREDENTIALS_PATH: str = ""
+
     @property
     def allowed_content_types_list(self) -> list[str]:
         return [t.strip() for t in self.ALLOWED_CONTENT_TYPES.split(",")]

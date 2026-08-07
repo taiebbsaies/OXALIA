@@ -59,6 +59,14 @@ dependencies:
   # Interactive crop frame with draggable corners (finger resize)
   crop_your_image: ^2.0.0
 
+  # Push notifications (FCM)
+  firebase_core: ^3.15.2
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^19.4.0
+
+  # Local persistence for in-app notification inbox
+  shared_preferences: ^2.5.3
+
   # Liquid-fill progress indicator for the upload state
   fluid_progress_indicator: ^1.0.1
 
@@ -80,6 +88,9 @@ dependencies:
 
   # Animated toggle for theme selection
   animated_toggle_switch: ^0.8.7
+
+  # Password strength meter for registration
+  password_strength_checker: ^1.3.2
 
 dev_dependencies:
   flutter_test:

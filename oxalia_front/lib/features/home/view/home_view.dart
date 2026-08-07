@@ -3,6 +3,7 @@ import 'package:flutter_animated_button/flutter_animated_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/notifications/notification_inbox.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/exam_stats.dart';
 import '../../../routing/app_router.dart';
@@ -17,19 +18,25 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<HomeViewModel>();
+    final inbox = context.watch<NotificationInbox>();
     final palette = context.palette;
+    final unread = inbox.unreadCount;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Home'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications are coming soon.')),
-              );
-            },
+            onPressed: () => context.push(AppRoutes.notifications),
+            icon: Badge(
+              isLabelVisible: unread > 0,
+              label: Text(
+                unread > 99 ? '99+' : '$unread',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700),
+              ),
+              backgroundColor: palette.teal,
+              child: const Icon(Icons.notifications_outlined),
+            ),
           ),
         ],
       ),

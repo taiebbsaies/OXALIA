@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/notifications/notification_inbox.dart';
 import '../data/repositories/exam_repository.dart';
 import '../features/analysis/view/new_analysis_view.dart';
 import '../features/analysis/viewmodel/analysis_viewmodel.dart';
@@ -15,6 +16,7 @@ import '../features/home/view/home_view.dart';
 import '../features/home/viewmodel/home_viewmodel.dart';
 import '../features/intro/view/intro_view.dart';
 import '../features/navigation/view/main_shell.dart';
+import '../features/notifications/view/notifications_view.dart';
 import '../features/profile/view/profile_view.dart';
 
 /// Route paths. Views never hardcode strings — they navigate via these.
@@ -25,6 +27,7 @@ abstract final class AppRoutes {
   static const String home = '/home';
   static const String history = '/history';
   static const String profile = '/profile';
+  static const String notifications = '/notifications';
   static const String newAnalysis = '/exams/new';
   static String examDetail(String examId) => '/exams/$examId';
 }
@@ -84,9 +87,16 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
       GoRoute(
         path: AppRoutes.newAnalysis,
         builder: (context, state) => ChangeNotifierProvider(
-          create: (_) => AnalysisViewModel(context.read<ExamRepository>()),
+          create: (_) => AnalysisViewModel(
+            context.read<ExamRepository>(),
+            notificationInbox: context.read<NotificationInbox>(),
+          ),
           child: const NewAnalysisView(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.notifications,
+        builder: (context, state) => const NotificationsView(),
       ),
       GoRoute(
         path: '/exams/:examId',

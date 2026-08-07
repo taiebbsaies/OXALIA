@@ -10,6 +10,9 @@ class ApiEndpoints {
   static const String logout = '/auth/logout';
   static const String me = '/auth/me';
 
+  // Devices / push
+  static const String fcmToken = '/devices/fcm-token';
+
   // Exams
   static const String examUpload = '/exams/upload';
   static const String exams = '/exams';

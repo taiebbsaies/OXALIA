@@ -25,6 +25,14 @@ TAGS_METADATA = [
         "Implements JWT access tokens with rotating, revocable refresh tokens.",
     },
     {
+        "name": "exams",
+        "description": "X-ray upload, inference status, results, and history.",
+    },
+    {
+        "name": "devices",
+        "description": "FCM device token registration for push notifications.",
+    },
+    {
         "name": "system",
         "description": (
             "Operational endpoints (health checks) used by orchestration and monitoring."
