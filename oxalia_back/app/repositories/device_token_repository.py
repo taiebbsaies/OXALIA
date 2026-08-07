@@ -33,9 +33,7 @@ async def upsert(
 
 
 async def list_tokens_for_user(db: AsyncSession, user_id: uuid.UUID) -> list[str]:
-    result = await db.execute(
-        select(DeviceToken.token).where(DeviceToken.user_id == user_id)
-    )
+    result = await db.execute(select(DeviceToken.token).where(DeviceToken.user_id == user_id))
     return list(result.scalars().all())
 
 

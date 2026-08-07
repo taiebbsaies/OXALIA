@@ -74,7 +74,9 @@ def send_to_tokens(
             token=token,
             android=messaging.AndroidConfig(
                 priority="high",
-                notification=messaging.AndroidNotification(click_action="FLUTTER_NOTIFICATION_CLICK"),
+                notification=messaging.AndroidNotification(
+                    click_action="FLUTTER_NOTIFICATION_CLICK"
+                ),
             ),
         )
         try:
