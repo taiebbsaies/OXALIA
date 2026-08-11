@@ -72,12 +72,10 @@ async def get_admin_stats(db: AsyncSession = Depends(get_db)) -> AdminStatsOut:
         model_versions=model_versions,
         avg_processing_seconds=avg_processing_seconds,
         user_growth=[
-            UserGrowthPoint(date=day, count=count)
-            for day, count in sorted(user_growth_raw.items())
+            UserGrowthPoint(date=day, count=count) for day, count in sorted(user_growth_raw.items())
         ],
         exam_volume=[
-            ExamVolumePoint(date=day, count=count)
-            for day, count in sorted(exam_volume_raw.items())
+            ExamVolumePoint(date=day, count=count) for day, count in sorted(exam_volume_raw.items())
         ],
     )
 

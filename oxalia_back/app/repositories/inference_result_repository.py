@@ -33,9 +33,7 @@ async def model_version_counts(db: AsyncSession, owner_id: uuid.UUID) -> dict[st
 async def model_version_counts_all(db: AsyncSession) -> dict[str, int]:
     """How many analyses ran on each model version, across every user."""
     result = await db.execute(
-        select(InferenceResult.model_version, func.count()).group_by(
-            InferenceResult.model_version
-        )
+        select(InferenceResult.model_version, func.count()).group_by(InferenceResult.model_version)
     )
     return dict(result.all())
 

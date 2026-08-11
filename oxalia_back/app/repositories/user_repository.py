@@ -96,9 +96,6 @@ async def signups_per_day(db: AsyncSession, since: datetime) -> dict[str, int]:
     """Daily signup counts from [since] to now, for the growth chart."""
     day = func.date(User.created_at)
     result = await db.execute(
-        select(day, func.count())
-        .where(User.created_at >= since)
-        .group_by(day)
-        .order_by(day)
+        select(day, func.count()).where(User.created_at >= since).group_by(day).order_by(day)
     )
     return {str(d): c for d, c in result.all()}
