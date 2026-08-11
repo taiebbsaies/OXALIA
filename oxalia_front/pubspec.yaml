@@ -92,6 +92,9 @@ dependencies:
   # Password strength meter for registration
   password_strength_checker: ^1.3.2
 
+  # Charts for the admin statistics dashboard
+  fl_chart: ^0.69.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

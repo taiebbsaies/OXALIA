@@ -33,6 +33,11 @@ TAGS_METADATA = [
         "description": "FCM device token registration for push notifications.",
     },
     {
+        "name": "admin",
+        "description": "Admin-only endpoints: platform statistics and user management (roles, "
+        "activation, deletion).",
+    },
+    {
         "name": "system",
         "description": (
             "Operational endpoints (health checks) used by orchestration and monitoring."

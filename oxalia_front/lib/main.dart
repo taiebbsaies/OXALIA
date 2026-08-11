@@ -9,8 +9,10 @@ import 'core/notifications/notification_inbox.dart';
 import 'core/notifications/push_notification_service.dart';
 import 'core/storage/token_storage.dart';
 import 'core/theme/theme_controller.dart';
+import 'data/repositories/admin_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/exam_repository.dart';
+import 'data/services/admin_service.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/exam_service.dart';
 import 'features/auth/viewmodel/auth_viewmodel.dart';
@@ -27,6 +29,7 @@ Future<void> main() async {
     tokenStorage: tokenStorage,
   );
   final examRepository = ExamRepository(examService: ExamService(apiClient));
+  final adminRepository = AdminRepository(adminService: AdminService(apiClient));
   final notificationInbox = NotificationInbox();
   await notificationInbox.load();
 
@@ -55,6 +58,7 @@ Future<void> main() async {
         Provider<ApiClient>.value(value: apiClient),
         Provider<AuthRepository>.value(value: authRepository),
         Provider<ExamRepository>.value(value: examRepository),
+        Provider<AdminRepository>.value(value: adminRepository),
         ChangeNotifierProvider<NotificationInbox>.value(value: notificationInbox),
         Provider<PushNotificationService>.value(value: pushNotifications),
         ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),

@@ -28,3 +28,23 @@ async def model_version_counts(db: AsyncSession, owner_id: uuid.UUID) -> dict[st
         .group_by(InferenceResult.model_version)
     )
     return dict(result.all())
+
+
+async def model_version_counts_all(db: AsyncSession) -> dict[str, int]:
+    """How many analyses ran on each model version, across every user."""
+    result = await db.execute(
+        select(InferenceResult.model_version, func.count()).group_by(
+            InferenceResult.model_version
+        )
+    )
+    return dict(result.all())
+
+
+async def avg_processing_seconds_all(db: AsyncSession) -> float | None:
+    """Average time between exam upload and completed inference, in seconds."""
+    delta_seconds = func.extract("epoch", InferenceResult.created_at - Exam.created_at)
+    result = await db.execute(
+        select(func.avg(delta_seconds)).join(Exam, Exam.id == InferenceResult.exam_id)
+    )
+    avg_seconds = result.scalar_one_or_none()
+    return float(avg_seconds) if avg_seconds is not None else None

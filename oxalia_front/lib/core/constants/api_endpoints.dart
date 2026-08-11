@@ -20,4 +20,9 @@ class ApiEndpoints {
   static String examById(String examId) => '/exams/$examId';
   static String examResult(String examId) => '/exams/$examId/result';
   static String examImage(String examId) => '/exams/$examId/image';
+
+  // Admin
+  static const String adminStats = '/admin/stats';
+  static const String adminUsers = '/admin/users';
+  static String adminUserById(String userId) => '/admin/users/$userId';
 }

@@ -2,7 +2,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../core/notifications/notification_inbox.dart';
+import '../data/repositories/admin_repository.dart';
 import '../data/repositories/exam_repository.dart';
+import '../features/admin/view/admin_dashboard_view.dart';
+import '../features/admin/view/admin_users_view.dart';
+import '../features/admin/viewmodel/admin_dashboard_viewmodel.dart';
+import '../features/admin/viewmodel/admin_users_viewmodel.dart';
 import '../features/analysis/view/new_analysis_view.dart';
 import '../features/analysis/viewmodel/analysis_viewmodel.dart';
 import '../features/auth/view/login_view.dart';
@@ -29,6 +34,8 @@ abstract final class AppRoutes {
   static const String profile = '/profile';
   static const String notifications = '/notifications';
   static const String newAnalysis = '/exams/new';
+  static const String admin = '/admin';
+  static const String adminUsers = '/admin/users';
   static String examDetail(String examId) => '/exams/$examId';
 }
 
@@ -66,7 +73,12 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
           }
           return onPublicRoute ? null : AppRoutes.login;
         case AuthStatus.authenticated:
-          return (onPublicRoute || onIntro) ? AppRoutes.home : null;
+          if (onPublicRoute || onIntro) return AppRoutes.home;
+          final onAdminRoute = state.matchedLocation.startsWith(AppRoutes.admin);
+          if (onAdminRoute && authViewModel.currentUser?.role != 'admin') {
+            return AppRoutes.home;
+          }
+          return null;
       }
     },
     routes: [
@@ -97,6 +109,16 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
       GoRoute(
         path: AppRoutes.notifications,
         builder: (context, state) => const NotificationsView(),
+      ),
+      GoRoute(
+        path: AppRoutes.adminUsers,
+        builder: (context, state) => ChangeNotifierProvider(
+          create: (_) => AdminUsersViewModel(
+            context.read<AdminRepository>(),
+            currentUserId: context.read<AuthViewModel>().currentUser!.id,
+          )..load(),
+          child: const AdminUsersView(),
+        ),
       ),
       GoRoute(
         path: '/exams/:examId',
@@ -143,6 +165,18 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
               GoRoute(
                 path: AppRoutes.profile,
                 builder: (context, state) => const ProfileView(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.admin,
+                builder: (context, state) => ChangeNotifierProvider(
+                  create: (_) =>
+                      AdminDashboardViewModel(context.read<AdminRepository>())..load(),
+                  child: const AdminDashboardView(),
+                ),
               ),
             ],
           ),
