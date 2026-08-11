@@ -29,12 +29,14 @@ class AdminService {
     String? role,
     bool? isActive,
   }) async {
+    final data = <String, dynamic>{};
+    data['role'] = role;
+    data['is_active'] = isActive;
+    data.removeWhere((_, value) => value == null);
+
     final response = await _apiClient.dio.patch(
       ApiEndpoints.adminUserById(userId),
-      data: {
-        if (role != null) 'role': role,
-        if (isActive != null) 'is_active': isActive,
-      },
+      data: data,
     );
     return AdminUser.fromJson(response.data as Map<String, dynamic>);
   }

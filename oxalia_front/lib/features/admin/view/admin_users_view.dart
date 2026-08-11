@@ -214,7 +214,7 @@ class _UserCard extends StatelessWidget {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: user.role,
+                  initialValue: user.role,
                   isDense: true,
                   decoration: const InputDecoration(isDense: true, labelText: 'Role'),
                   items: const [

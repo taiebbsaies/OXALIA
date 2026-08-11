@@ -49,7 +49,7 @@ async def test_admin_endpoints_reject_non_admin(client):
 async def test_admin_stats_returns_platform_counters(client, db):
     admin_id, admin_headers = await register_and_login(client, full_name="Dr Admin")
     await promote_to_admin(db, admin_id)
-    _, clinician_headers = await register_and_login(client, full_name="Dr Clinician")
+    await register_and_login(client, full_name="Dr Clinician")
 
     resp = await client.get("/admin/stats", headers=admin_headers)
     assert resp.status_code == 200
