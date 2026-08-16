@@ -1,3 +1,6 @@
+# AI service
+ai_service/
+
 # Python / backend
 oxalia_back/venv/
 oxalia_back/__pycache__/

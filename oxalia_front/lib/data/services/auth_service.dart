@@ -44,4 +44,14 @@ class AuthService {
     final response = await _apiClient.dio.get(ApiEndpoints.me);
     return User.fromJson(response.data as Map<String, dynamic>);
   }
+
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    await _apiClient.dio.patch(
+      ApiEndpoints.mePassword,
+      data: {'old_password': oldPassword, 'new_password': newPassword},
+    );
+  }
 }

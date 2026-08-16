@@ -15,11 +15,20 @@ services:
       timeout: 5s
       retries: 5
 
+  ai_service:
+    build:
+      context: ../ai_service
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
   api:
     build: .
     depends_on:
       db:
         condition: service_healthy
+      ai_service:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/oxalia
       JWT_SECRET_KEY: dev-secret-change-me
@@ -31,6 +40,10 @@ services:
       UPLOAD_DIR: /app/uploads
       MAX_UPLOAD_SIZE_MB: "10"
       ALLOWED_CONTENT_TYPES: image/jpeg,image/png
+      USE_STUB_MODEL: "false"
+      AI_SERVICE_URL: http://ai_service:8001/predict
+      AI_SERVICE_MODEL: densenet121-res224-all
+      AI_SERVICE_TIMEOUT_SECONDS: "120"
     ports:
       - "8000:8000"
     volumes:

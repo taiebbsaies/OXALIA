@@ -25,6 +25,21 @@ class UserCreate(BaseModel):
         return value
 
 
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(examples=["OldPassw0rd!"])
+    new_password: str = Field(min_length=8, max_length=128, examples=["NewPassw0rd!"])
+
+    @field_validator("new_password")
+    @classmethod
+    def new_password_must_meet_policy(cls, value: str) -> str:
+        if not _PASSWORD_POLICY.match(value):
+            raise ValueError(
+                "Password must be at least 8 characters and include uppercase, "
+                "lowercase, a number, and a special character"
+            )
+        return value
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

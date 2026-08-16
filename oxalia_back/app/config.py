@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     # Firebase Cloud Messaging (optional — push is a no-op if unset)
     FIREBASE_CREDENTIALS_PATH: str = ""
 
+    # AI inference: toggle between the placeholder stub and a real external
+    # AI service without touching code — flip USE_STUB_MODEL once the
+    # service is configured.
+    USE_STUB_MODEL: bool = True
+    AI_SERVICE_URL: str = ""
+    AI_SERVICE_API_KEY: str = ""
+    AI_SERVICE_MODEL: str = "densenet121-res224-all"
+    AI_SERVICE_TIMEOUT_SECONDS: int = 120
+
     @property
     def allowed_content_types_list(self) -> list[str]:
         return [t.strip() for t in self.ALLOWED_CONTENT_TYPES.split(",")]

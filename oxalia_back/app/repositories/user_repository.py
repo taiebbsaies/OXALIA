@@ -45,6 +45,13 @@ async def exam_counts_by_owner(db: AsyncSession) -> dict[uuid.UUID, int]:
     return dict(result.all())
 
 
+async def update_password(db: AsyncSession, user: User, *, hashed_password: str) -> User:
+    user.hashed_password = hashed_password
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def update_fields(
     db: AsyncSession,
     user: User,

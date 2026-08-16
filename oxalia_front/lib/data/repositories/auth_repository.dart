@@ -62,6 +62,20 @@ class AuthRepository {
     }
   }
 
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _authService.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
   /// Returns the current user if a valid session exists, null otherwise.
   Future<User?> getCurrentUser() async {
     final accessToken = await _tokenStorage.readAccessToken();

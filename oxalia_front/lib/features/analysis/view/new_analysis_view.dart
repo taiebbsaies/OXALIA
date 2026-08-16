@@ -10,9 +10,18 @@ import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../routing/app_router.dart';
 import '../../../shared/widgets/analysis_result_card.dart';
 import '../../../shared/widgets/scanner_viewport.dart';
 import '../viewmodel/analysis_viewmodel.dart';
+
+void _safeBack(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go(AppRoutes.home);
+  }
+}
 
 /// Scanner-style capture screen: pick → drag-crop → upload → result.
 class NewAnalysisView extends StatelessWidget {
@@ -26,7 +35,10 @@ class NewAnalysisView extends StatelessWidget {
     if (viewModel.step == AnalysisStep.completed &&
         viewModel.exam != null &&
         viewModel.result != null) {
-      return Scaffold(
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (_, __) => _safeBack(context),
+        child: Scaffold(
         backgroundColor: palette.background,
         body: SafeArea(
           child: SingleChildScrollView(
@@ -35,23 +47,27 @@ class NewAnalysisView extends StatelessWidget {
               exam: viewModel.exam!,
               result: viewModel.result!,
               imageBytes: viewModel.imageBytes,
-              onBack: () => context.pop(),
+              onBack: () => _safeBack(context),
               onNewAnalysis: viewModel.reset,
             ),
           ),
         ),
+      ),
       );
     }
 
     final isCropping = viewModel.step == AnalysisStep.resizing &&
         viewModel.sourceBytes != null;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (_, __) => _safeBack(context),
+      child: Scaffold(
       backgroundColor: palette.background,
       body: SafeArea(
         child: Column(
           children: [
-            _ScannerHeader(onBack: () => context.pop()),
+            _ScannerHeader(onBack: () => _safeBack(context)),
             const SizedBox(height: 8),
             _AiReadyBadge(
               pulse: viewModel.step == AnalysisStep.idle || isCropping,
@@ -105,6 +121,7 @@ class NewAnalysisView extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 }

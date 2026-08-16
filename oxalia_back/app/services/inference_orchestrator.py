@@ -1,6 +1,9 @@
 from pathlib import Path
 from uuid import UUID
 
+from app.config import settings
+from app.core.http_model_adapter import HttpModelAdapter
+from app.core.model_adapter import ModelAdapter
 from app.core.stub_model_adapter import StubModelAdapter
 from app.database import AsyncSessionLocal
 from app.models.exam import ExamStatus
@@ -8,8 +11,9 @@ from app.models.inference_result import InferenceResult
 from app.repositories import device_token_repository, exam_repository, inference_result_repository
 from app.services import fcm_service
 
-# Swap this single line later to plug in the real OXALIA 2D adapter.
-model_adapter = StubModelAdapter()
+# Toggle via USE_STUB_MODEL to test with the real external AI service without
+# touching code. Swap this for the real OXALIA 2D adapter once it's ready.
+model_adapter: ModelAdapter = StubModelAdapter() if settings.USE_STUB_MODEL else HttpModelAdapter()
 
 
 async def _notify_exam_owner(
