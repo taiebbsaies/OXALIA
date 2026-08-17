@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/notifications/notification_inbox.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/exam_stats.dart';
+import '../../analysis/viewmodel/active_analysis_tracker.dart';
 import '../../../routing/app_router.dart';
 import '../../../shared/widgets/exam_tile.dart';
 import '../viewmodel/home_viewmodel.dart';
@@ -19,6 +20,7 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final viewModel = context.watch<HomeViewModel>();
     final inbox = context.watch<NotificationInbox>();
+    final activeAnalysis = context.watch<ActiveAnalysisTracker>();
     final palette = context.palette;
     final unread = inbox.unreadCount;
 
@@ -68,6 +70,10 @@ class HomeView extends StatelessWidget {
             },
             const SizedBox(height: 16),
             _NewAnalysisButton(),
+            if (activeAnalysis.hasActiveAnalysis) ...[
+              const SizedBox(height: 16),
+              _ActiveAnalysisCard(tracker: activeAnalysis),
+            ],
             if (viewModel.status == HomeStatsStatus.loaded) ...[
               const SizedBox(height: 24),
               Text(
@@ -98,7 +104,122 @@ class HomeView extends StatelessWidget {
   }
 }
 
-/// Two headline counters, matching the Activity Overview design.
+class _ActiveAnalysisCard extends StatelessWidget {
+  const _ActiveAnalysisCard({required this.tracker});
+
+  final ActiveAnalysisTracker tracker;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final percent = (tracker.progress * 100).clamp(0, 100).toInt();
+    final isUploading = tracker.status == ActiveAnalysisStatus.uploading;
+    final title = isUploading ? 'Uploading analysis' : 'Analysis in progress';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.cyan.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: palette.cyan.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [palette.teal, palette.cyan]),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: palette.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      tracker.patientName == null
+                          ? 'Server-side processing is running'
+                          : 'Patient: ${tracker.patientName}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: palette.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '$percent%',
+                style: TextStyle(
+                  color: palette.cyan,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: tracker.progress,
+              minHeight: 8,
+              backgroundColor: palette.border.withValues(alpha: 0.35),
+              valueColor: AlwaysStoppedAnimation<Color>(palette.cyan),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(Icons.phone_android, size: 16, color: palette.teal),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Processing continues in the background. You can keep using the app.',
+                  style: TextStyle(
+                    color: palette.textSecondary,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Headline counters, matching the Activity Overview design.
 class _StatsRow extends StatelessWidget {
   const _StatsRow({required this.stats});
 
@@ -107,23 +228,31 @@ class _StatsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final successRate = (stats.successRate * 100).round();
 
-    return Row(
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
       children: [
-        Expanded(
-          child: _StatCard(
-            value: stats.total,
-            label: 'Total Scans',
-            color: palette.teal,
-          ),
+        _StatCard(
+          value: '${stats.total}',
+          label: 'Total Scans',
+          color: palette.teal,
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _StatCard(
-            value: stats.processing,
-            label: 'Pending Reports',
-            color: palette.cyan,
-          ),
+        _StatCard(
+          value: '${stats.processing}',
+          label: 'Pending Reports',
+          color: palette.cyan,
+        ),
+        _StatCard(
+          value: '${stats.completed}',
+          label: 'Completed',
+          color: const Color(0xFF10B981),
+        ),
+        _StatCard(
+          value: '$successRate%',
+          label: 'Success Rate',
+          color: const Color(0xFF8B5CF6),
         ),
       ],
     );
@@ -137,7 +266,7 @@ class _StatCard extends StatelessWidget {
     required this.color,
   });
 
-  final int value;
+  final String value;
   final String label;
   final Color color;
 
@@ -145,7 +274,11 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Container(
+    final width = (MediaQuery.sizeOf(context).width - 42) / 2;
+
+    return SizedBox(
+      width: width,
+      child: Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: palette.surface,
@@ -156,7 +289,7 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '$value',
+            value,
             style: TextStyle(
               color: color,
               fontSize: 28,
@@ -169,6 +302,7 @@ class _StatCard extends StatelessWidget {
             style: TextStyle(color: palette.textSecondary, fontSize: 13),
           ),
         ],
+      ),
       ),
     );
   }

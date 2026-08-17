@@ -8,6 +8,14 @@ import '../../../routing/app_router.dart';
 import '../../../shared/widgets/analysis_result_card.dart';
 import '../viewmodel/exam_detail_viewmodel.dart';
 
+void _safeBack(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+  } else {
+    context.go(AppRoutes.home);
+  }
+}
+
 /// Full exam detail — reuses the same result card as the post-analysis
 /// screen when inference completed; otherwise shows status notes.
 class ExamDetailView extends StatelessWidget {
@@ -72,7 +80,7 @@ class _LoadedBody extends StatelessWidget {
           exam: exam,
           result: viewModel.result!,
           imageBytes: viewModel.imageBytes,
-          onBack: () => context.pop(),
+          onBack: () => _safeBack(context),
           onNewAnalysis: () => context.push(AppRoutes.newAnalysis),
         ),
       );
@@ -86,7 +94,7 @@ class _LoadedBody extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: () => context.pop(),
+                onPressed: () => _safeBack(context),
                 icon: Icon(Icons.arrow_back, color: palette.textPrimary),
               ),
               Text(

@@ -7,6 +7,7 @@ import '../../../core/utils/image_preprocessor.dart';
 import '../../../data/models/exam.dart';
 import '../../../data/models/inference_result.dart';
 import '../../../data/repositories/exam_repository.dart';
+import 'active_analysis_tracker.dart';
 
 enum AnalysisStep {
   /// No image picked yet — scanner idle.
@@ -32,11 +33,16 @@ enum AnalysisStep {
 }
 
 class AnalysisViewModel extends ChangeNotifier {
-  AnalysisViewModel(this._repository, {NotificationInbox? notificationInbox})
-      : _notificationInbox = notificationInbox;
+  AnalysisViewModel(
+    this._repository, {
+    NotificationInbox? notificationInbox,
+    ActiveAnalysisTracker? activeAnalysisTracker,
+  })  : _notificationInbox = notificationInbox,
+        _activeAnalysisTracker = activeAnalysisTracker;
 
   final ExamRepository _repository;
   final NotificationInbox? _notificationInbox;
+  final ActiveAnalysisTracker? _activeAnalysisTracker;
   final ImagePicker _picker = ImagePicker();
 
   AnalysisStep _step = AnalysisStep.idle;
@@ -49,6 +55,7 @@ class AnalysisViewModel extends ChangeNotifier {
   double _uploadProgress = 0;
   String _patientName = '';
   bool _applyingCrop = false;
+  bool _disposed = false;
 
   AnalysisStep get step => _step;
 
@@ -79,10 +86,14 @@ class AnalysisViewModel extends ChangeNotifier {
       _patientName.trim().isNotEmpty &&
       (_step == AnalysisStep.idle || _step == AnalysisStep.failed);
 
+  void _notifyIfActive() {
+    if (!_disposed) notifyListeners();
+  }
+
   void setPatientName(String value) {
     if (_patientName == value) return;
     _patientName = value;
-    notifyListeners();
+    _notifyIfActive();
   }
 
   /// Pick from camera or gallery, normalize for preview, then wait for
@@ -90,7 +101,7 @@ class AnalysisViewModel extends ChangeNotifier {
   Future<void> pickImage(ImageSource source) async {
     if (!canCapture) {
       _errorMessage = 'Enter the patient name before capturing.';
-      notifyListeners();
+      _notifyIfActive();
       return;
     }
 
@@ -109,7 +120,7 @@ class AnalysisViewModel extends ChangeNotifier {
     _uploadProgress = 0;
     _sourceBytes = null;
     _imageBytes = null;
-    notifyListeners();
+    _notifyIfActive();
 
     try {
       final rawBytes = await picked.readAsBytes();
@@ -123,7 +134,7 @@ class AnalysisViewModel extends ChangeNotifier {
       _errorMessage = 'Unsupported image format. Pick a JPEG or PNG photo.';
       _step = AnalysisStep.failed;
     }
-    notifyListeners();
+    _notifyIfActive();
   }
 
   /// Discard the current preview and return to the capture screen.
@@ -140,7 +151,7 @@ class AnalysisViewModel extends ChangeNotifier {
     _result = null;
     _uploadProgress = 0;
     _step = AnalysisStep.idle;
-    notifyListeners();
+    _notifyIfActive();
   }
 
   /// Called when the crop widget finishes; compresses then uploads.
@@ -150,20 +161,20 @@ class AnalysisViewModel extends ChangeNotifier {
     final name = _patientName.trim();
     if (name.isEmpty) {
       _errorMessage = 'Enter the patient name before capturing.';
-      notifyListeners();
+      _notifyIfActive();
       return;
     }
 
     _applyingCrop = true;
     _errorMessage = null;
-    notifyListeners();
+    _notifyIfActive();
 
     try {
       _imageBytes = await ImagePreprocessor.normalize(croppedBytes);
     } catch (_) {
       _applyingCrop = false;
       _errorMessage = 'Could not process the cropped image. Try again.';
-      notifyListeners();
+      _notifyIfActive();
       return;
     }
 
@@ -174,14 +185,14 @@ class AnalysisViewModel extends ChangeNotifier {
   void setCropError(String message) {
     _applyingCrop = false;
     _errorMessage = message;
-    notifyListeners();
+    _notifyIfActive();
   }
 
   void beginCrop() {
     if (_applyingCrop || _step != AnalysisStep.resizing) return;
     _applyingCrop = true;
     _errorMessage = null;
-    notifyListeners();
+    _notifyIfActive();
   }
 
   /// Full pipeline: upload (with retry) → poll → fetch result.
@@ -196,7 +207,7 @@ class AnalysisViewModel extends ChangeNotifier {
     if (name.isEmpty) {
       _errorMessage = 'Enter the patient name before capturing.';
       _step = AnalysisStep.failed;
-      notifyListeners();
+      _notifyIfActive();
       return;
     }
 
@@ -204,7 +215,8 @@ class AnalysisViewModel extends ChangeNotifier {
     _errorMessage = null;
     _uploadProgress = 0;
     _step = AnalysisStep.uploading;
-    notifyListeners();
+    _activeAnalysisTracker?.startUpload(patientName: name);
+    _notifyIfActive();
 
     try {
       _exam = await _repository.uploadExam(
@@ -213,13 +225,15 @@ class AnalysisViewModel extends ChangeNotifier {
         onSendProgress: (sent, total) {
           if (total > 0) {
             _uploadProgress = sent / total;
-            notifyListeners();
+            _activeAnalysisTracker?.updateUploadProgress(_uploadProgress);
+            _notifyIfActive();
           }
         },
       );
 
       _step = AnalysisStep.processing;
-      notifyListeners();
+      _activeAnalysisTracker?.startProcessing();
+      _notifyIfActive();
 
       final completed = await _repository.waitForCompletion(
         _exam!.id,
@@ -229,6 +243,7 @@ class AnalysisViewModel extends ChangeNotifier {
       _result = await _repository.getResult(completed.id);
 
       _step = AnalysisStep.completed;
+      _activeAnalysisTracker?.complete();
       await _notificationInbox?.addAnalysisUpdate(
         title: 'Analysis ready',
         body: 'Results for $name are ready to review.',
@@ -238,6 +253,7 @@ class AnalysisViewModel extends ChangeNotifier {
     } on ApiException catch (e) {
       _errorMessage = e.message;
       _step = AnalysisStep.failed;
+      _activeAnalysisTracker?.fail(e.message);
       await _notificationInbox?.addAnalysisUpdate(
         title: 'Analysis failed',
         body: e.message,
@@ -245,7 +261,7 @@ class AnalysisViewModel extends ChangeNotifier {
         status: 'failed',
       );
     }
-    notifyListeners();
+    _notifyIfActive();
   }
 
   /// Stops the polling loop; the server-side inference keeps running and
@@ -267,6 +283,13 @@ class AnalysisViewModel extends ChangeNotifier {
     _uploadProgress = 0;
     _patientName = '';
     _applyingCrop = false;
-    notifyListeners();
+    _activeAnalysisTracker?.clear();
+    _notifyIfActive();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

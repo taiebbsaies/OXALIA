@@ -9,6 +9,7 @@ import '../features/admin/view/admin_users_view.dart';
 import '../features/admin/viewmodel/admin_dashboard_viewmodel.dart';
 import '../features/admin/viewmodel/admin_users_viewmodel.dart';
 import '../features/analysis/view/new_analysis_view.dart';
+import '../features/analysis/viewmodel/active_analysis_tracker.dart';
 import '../features/analysis/viewmodel/analysis_viewmodel.dart';
 import '../features/auth/view/login_view.dart';
 import '../features/auth/view/register_view.dart';
@@ -102,6 +103,7 @@ GoRouter buildRouter(AuthViewModel authViewModel) {
           create: (_) => AnalysisViewModel(
             context.read<ExamRepository>(),
             notificationInbox: context.read<NotificationInbox>(),
+            activeAnalysisTracker: context.read<ActiveAnalysisTracker>(),
           ),
           child: const NewAnalysisView(),
         ),

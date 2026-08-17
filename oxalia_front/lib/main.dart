@@ -15,6 +15,7 @@ import 'data/repositories/exam_repository.dart';
 import 'data/services/admin_service.dart';
 import 'data/services/auth_service.dart';
 import 'data/services/exam_service.dart';
+import 'features/analysis/viewmodel/active_analysis_tracker.dart';
 import 'features/auth/viewmodel/auth_viewmodel.dart';
 import 'routing/app_router.dart';
 
@@ -32,6 +33,7 @@ Future<void> main() async {
   final adminRepository = AdminRepository(adminService: AdminService(apiClient));
   final notificationInbox = NotificationInbox();
   await notificationInbox.load();
+  final activeAnalysisTracker = ActiveAnalysisTracker();
 
   final pushNotifications = PushNotificationService(
     apiClient,
@@ -60,6 +62,9 @@ Future<void> main() async {
         Provider<ExamRepository>.value(value: examRepository),
         Provider<AdminRepository>.value(value: adminRepository),
         ChangeNotifierProvider<NotificationInbox>.value(value: notificationInbox),
+        ChangeNotifierProvider<ActiveAnalysisTracker>.value(
+          value: activeAnalysisTracker,
+        ),
         Provider<PushNotificationService>.value(value: pushNotifications),
         ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
         ChangeNotifierProvider<ThemeController>.value(value: themeController),

@@ -18,6 +18,11 @@ class ExamStats {
   /// model_version -> number of analyses run on it.
   final Map<String, int> modelVersions;
 
+  double get successRate {
+    if (total == 0) return 0;
+    return completed / total;
+  }
+
   factory ExamStats.fromJson(Map<String, dynamic> json) {
     final rawVersions = json['model_versions'] as Map<String, dynamic>;
     return ExamStats(
