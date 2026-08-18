@@ -1,17 +1,18 @@
 # oxalia_front
 
-A new Flutter project.
+Flutter client for the **OXALIA Mobile Inference Platform**.
 
-## Getting Started
+For the full project overview (backend + frontend), architecture, setup, and API summary, see the root [README](../README.md).
 
-This project is a starting point for a Flutter application.
+## Quick start
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+# Configure API base URL in local .env (see root README)
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter analyze
+flutter test
+```

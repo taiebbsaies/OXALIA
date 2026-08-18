@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nav_bar/nav_bar.dart';
+import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../auth/viewmodel/auth_viewmodel.dart';
 
-/// Shell hosting the main tabs (Home / History / Profile) with the
-/// animated bottom navigation bar.
+/// Shell hosting the main tabs (Home / History / Profile[/ Admin]) with the
+/// animated bottom navigation bar. The Admin tab (last branch) is only
+/// rendered for users with the admin role — its branch index never shifts
+/// the indices of the other tabs.
 class MainShell extends StatelessWidget {
   const MainShell({super.key, required this.navigationShell});
 
@@ -15,6 +19,7 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isAdmin = context.watch<AuthViewModel>().currentUser?.role == 'admin';
 
     return Scaffold(
       // Keeps the nav bar's constant repaints from touching the body.
@@ -69,6 +74,15 @@ class MainShell extends StatelessWidget {
             label: 'PROFILE',
             customIcon: Icon(Icons.person_outline, color: palette.textPrimary),
           ),
+          if (isAdmin)
+            NavBarItem(
+              icon: Icons.admin_panel_settings_outlined,
+              label: 'ADMIN',
+              customIcon: Icon(
+                Icons.admin_panel_settings_outlined,
+                color: palette.textPrimary,
+              ),
+            ),
         ],
       ),
     );

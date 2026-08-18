@@ -5,7 +5,7 @@ from app.core.deps import get_current_user, require_role
 from app.database import get_db
 from app.models.user import Role, User
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair
-from app.schemas.user import UserCreate, UserOut
+from app.schemas.user import ChangePasswordRequest, UserCreate, UserOut
 from app.services import auth_service
 
 router = APIRouter()
@@ -94,6 +94,31 @@ async def logout(data: RefreshRequest, db: AsyncSession = Depends(get_db)) -> No
 )
 async def get_me(current_user: User = Depends(get_current_user)) -> UserOut:
     return UserOut.model_validate(current_user)
+
+
+@router.patch(
+    "/me/password",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Change the current user's password",
+    description=(
+        "Verifies the supplied `old_password` against the stored hash, then replaces it "
+        "with `new_password` (subject to the same strength policy as registration). "
+        "Requires a valid `Authorization: Bearer <access_token>` header."
+    ),
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Current password is incorrect, or new password is the same as the old one"
+        },
+        status.HTTP_401_UNAUTHORIZED: {"description": "Missing, invalid or expired access token"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error (password policy)"},
+    },
+)
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    await auth_service.change_password(db, current_user, data)
 
 
 @router.get(

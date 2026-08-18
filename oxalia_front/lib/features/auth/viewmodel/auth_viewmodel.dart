@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/errors/api_exception.dart';
+import '../../../core/notifications/push_notification_service.dart';
 import '../../../data/models/user.dart';
 import '../../../data/repositories/auth_repository.dart';
 
@@ -11,19 +12,25 @@ enum AuthStatus { unknown, authenticated, unauthenticated }
 /// Presentation state for the auth feature. Views watch this and stay
 /// dumb — all repository calls live here.
 class AuthViewModel extends ChangeNotifier {
-  AuthViewModel(this._authRepository);
+  AuthViewModel(this._authRepository, {PushNotificationService? pushNotifications})
+    : _pushNotifications = pushNotifications;
 
   final AuthRepository _authRepository;
+  final PushNotificationService? _pushNotifications;
 
   AuthStatus _status = AuthStatus.unknown;
   User? _currentUser;
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isChangingPassword = false;
+  String? _changePasswordError;
 
   AuthStatus get status => _status;
   User? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  bool get isChangingPassword => _isChangingPassword;
+  String? get changePasswordError => _changePasswordError;
 
   /// Called once at app start to route the user to login or home.
   /// Bounded by a hard timeout: a hanging network or storage layer must
@@ -36,6 +43,9 @@ class AuthViewModel extends ChangeNotifier {
       _status = _currentUser != null
           ? AuthStatus.authenticated
           : AuthStatus.unauthenticated;
+      if (_status == AuthStatus.authenticated) {
+        await _pushNotifications?.registerToken();
+      }
     } on ApiException {
       // Network down: treat as unauthenticated rather than crash the app.
       _status = AuthStatus.unauthenticated;
@@ -53,6 +63,7 @@ class AuthViewModel extends ChangeNotifier {
     try {
       _currentUser = await _authRepository.login(email: email, password: password);
       _status = AuthStatus.authenticated;
+      await _pushNotifications?.registerToken();
       _endAction();
       return true;
     } on ApiException catch (e) {
@@ -82,7 +93,37 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    _isChangingPassword = true;
+    _changePasswordError = null;
+    notifyListeners();
+    try {
+      await _authRepository.changePassword(
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      _isChangingPassword = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _isChangingPassword = false;
+      _changePasswordError = e.message;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void clearChangePasswordError() {
+    if (_changePasswordError == null) return;
+    _changePasswordError = null;
+    notifyListeners();
+  }
+
   Future<void> logout() async {
+    await _pushNotifications?.unregisterCurrentToken();
     await _authRepository.logout();
     _currentUser = null;
     _status = AuthStatus.unauthenticated;

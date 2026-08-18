@@ -53,6 +53,27 @@ dependencies:
   # Image capture / gallery picking for exam uploads
   image_picker: ^1.1.2
 
+  # Native client-side image compression (HEIC -> JPEG, resize, EXIF strip)
+  flutter_image_compress: ^2.5.1
+
+  # Interactive crop frame with draggable corners (finger resize)
+  crop_your_image: ^2.0.0
+
+  # Push notifications (FCM)
+  firebase_core: ^3.15.2
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^19.4.0
+
+  # Local persistence for in-app notification inbox
+  shared_preferences: ^2.5.3
+
+  # Liquid-fill progress indicator for the upload state
+  fluid_progress_indicator: ^1.0.1
+
+  # Client-side PDF report generation + share/print sheet
+  pdf: ^3.11.3
+  printing: ^5.14.2
+
   # Animated splash screen (Lottie JSON animations)
   lottie: ^3.3.1
 
@@ -67,6 +88,12 @@ dependencies:
 
   # Animated toggle for theme selection
   animated_toggle_switch: ^0.8.7
+
+  # Password strength meter for registration
+  password_strength_checker: ^1.3.2
+
+  # Charts for the admin statistics dashboard
+  fl_chart: ^0.69.2
 
 dev_dependencies:
   flutter_test:

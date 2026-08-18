@@ -13,7 +13,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.user import Role, User
 from app.repositories import refresh_token_repository, user_repository
 from app.schemas.auth import TokenPair
-from app.schemas.user import UserCreate
+from app.schemas.user import ChangePasswordRequest, UserCreate
 
 
 async def register(db: AsyncSession, data: UserCreate) -> User:
@@ -69,6 +69,19 @@ async def refresh_token_pair(db: AsyncSession, raw_refresh_token: str) -> TokenP
 
     await refresh_token_repository.revoke(db, stored_token)
     return await issue_token_pair(db, user)
+
+
+async def change_password(db: AsyncSession, user: User, data: ChangePasswordRequest) -> None:
+    if not verify_password(data.old_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect"
+        )
+    if data.old_password == data.new_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must differ from the current password",
+        )
+    await user_repository.update_password(db, user, hashed_password=hash_password(data.new_password))
 
 
 async def logout(db: AsyncSession, raw_refresh_token: str) -> None:

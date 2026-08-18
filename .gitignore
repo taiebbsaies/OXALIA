@@ -1,3 +1,6 @@
+# AI service
+ai_service/
+
 # Python / backend
 oxalia_back/venv/
 oxalia_back/__pycache__/
@@ -12,6 +15,10 @@ oxalia_back/uploads/
 **/.env
 !.env.example
 !**/.env.example
+**/secrets/
+**/firebase-adminsdk*.json
+**/google-services.json
+**/GoogleService-Info.plist
 
 # Flutter / frontend
 oxalia_front/.dart_tool/

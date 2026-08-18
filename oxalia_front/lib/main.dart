@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
 import 'core/network/api_client.dart';
+import 'core/notifications/notification_inbox.dart';
+import 'core/notifications/push_notification_service.dart';
 import 'core/storage/token_storage.dart';
 import 'core/theme/theme_controller.dart';
+import 'data/repositories/admin_repository.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/exam_repository.dart';
+import 'data/services/admin_service.dart';
 import 'data/services/auth_service.dart';
+import 'data/services/exam_service.dart';
+import 'features/analysis/viewmodel/active_analysis_tracker.dart';
 import 'features/auth/viewmodel/auth_viewmodel.dart';
 import 'routing/app_router.dart';
 
@@ -21,10 +29,29 @@ Future<void> main() async {
     authService: AuthService(apiClient),
     tokenStorage: tokenStorage,
   );
-  final authViewModel = AuthViewModel(authRepository);
+  final examRepository = ExamRepository(examService: ExamService(apiClient));
+  final adminRepository = AdminRepository(adminService: AdminService(apiClient));
+  final notificationInbox = NotificationInbox();
+  await notificationInbox.load();
+  final activeAnalysisTracker = ActiveAnalysisTracker();
+
+  final pushNotifications = PushNotificationService(
+    apiClient,
+    inbox: notificationInbox,
+  );
+  final authViewModel = AuthViewModel(
+    authRepository,
+    pushNotifications: pushNotifications,
+  );
   final themeController = ThemeController();
 
-  final router = buildRouter(authViewModel);
+  await pushNotifications.initialize();
+
+  late final GoRouter router;
+  router = buildRouter(authViewModel);
+  pushNotifications.onOpenExam = (examId) {
+    router.go(AppRoutes.examDetail(examId));
+  };
 
   runApp(
     MultiProvider(
@@ -32,6 +59,13 @@ Future<void> main() async {
         Provider<TokenStorage>.value(value: tokenStorage),
         Provider<ApiClient>.value(value: apiClient),
         Provider<AuthRepository>.value(value: authRepository),
+        Provider<ExamRepository>.value(value: examRepository),
+        Provider<AdminRepository>.value(value: adminRepository),
+        ChangeNotifierProvider<NotificationInbox>.value(value: notificationInbox),
+        ChangeNotifierProvider<ActiveAnalysisTracker>.value(
+          value: activeAnalysisTracker,
+        ),
+        Provider<PushNotificationService>.value(value: pushNotifications),
         ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
         ChangeNotifierProvider<ThemeController>.value(value: themeController),
       ],

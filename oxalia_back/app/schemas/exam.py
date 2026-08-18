@@ -10,6 +10,7 @@ class ExamOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: uuid.UUID
+    patient_name: str
     original_filename: str
     content_type: str
     size_bytes: int
@@ -25,3 +26,13 @@ class InferenceResultOut(BaseModel):
     model_version: str
     result_json: dict
     created_at: datetime
+
+
+class ExamStatsOut(BaseModel):
+    """Aggregate counters for the Home dashboard."""
+
+    total: int
+    completed: int
+    processing: int
+    failed: int
+    model_versions: dict[str, int]
