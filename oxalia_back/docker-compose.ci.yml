@@ -4,31 +4,17 @@
 #   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
 #
 # Jenkins: http://localhost:8080
-# Test DB is isolated from the app DB (port 5433 on the host).
+# Tests use the same Postgres service and database as the API: db / oxalia
 
 services:
-  db_test:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: oxalia_test
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   jenkins:
     build:
       context: ./jenkins
     ports:
-      - "8080:8080"
-      - "50000:50000"
+      - "8081:8080"
+      - "50001:50000"
     depends_on:
-      db_test:
+      db:
         condition: service_healthy
     volumes:
       - jenkins_home:/var/jenkins_home

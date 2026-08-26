@@ -3,8 +3,7 @@ pipeline {
 
     environment {
         BACKEND_DIR = 'oxalia_back'
-        DATABASE_URL = 'postgresql+asyncpg://postgres:postgres@db_test:5432/oxalia_test'
-        TEST_DATABASE_URL = 'postgresql+asyncpg://postgres:postgres@db_test:5432/oxalia_test'
+        DATABASE_URL = 'postgresql+asyncpg://postgres:postgres@db:5432/oxalia'
         JWT_SECRET_KEY = 'ci-test-secret-key-32-bytes-minimum!!'
         JWT_ALGORITHM = 'HS256'
         ACCESS_TOKEN_EXPIRE_MINUTES = '15'

@@ -9,12 +9,12 @@ from app.database import Base, get_db
 from app.main import app
 from app.models import RefreshToken, User  # noqa: F401 — register models on Base.metadata
 
-TEST_DATABASE_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia_test",
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia",
 )
 
-engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+engine = create_async_engine(DATABASE_URL, echo=False)
 
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
