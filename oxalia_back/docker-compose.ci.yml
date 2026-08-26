@@ -3,8 +3,9 @@
 #   docker compose up -d
 #   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
 #
-# Jenkins: http://localhost:8080
-# Tests use the same Postgres service and database as the API: db / oxalia
+# Jenkins UI: http://localhost:8081
+# Rebuild the Jenkins image after Dockerfile changes:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
 
 services:
   jenkins:
