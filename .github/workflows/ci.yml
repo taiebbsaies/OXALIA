@@ -20,7 +20,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: oxalia_test
+          POSTGRES_DB: oxalia
         ports:
           - 5432:5432
         options: >-
@@ -30,7 +30,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia_test
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia
       JWT_SECRET_KEY: ci-test-secret-key-32-bytes-minimum!!
       JWT_ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: "15"
