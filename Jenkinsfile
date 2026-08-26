@@ -2,7 +2,15 @@ pipeline {
     agent any
 
     environment {
-        BACKEND_DIR = 'oxalia_back'
+    BACKEND_DIR = 'oxalia_back'
+    DATABASE_URL = 'postgresql+asyncpg://postgres:postgres@localhost:5432/oxalia'
+    JWT_SECRET_KEY = 'ci-test-secret-key-32-bytes-minimum!!'
+    JWT_ALGORITHM = 'HS256'
+    ACCESS_TOKEN_EXPIRE_MINUTES = '15'
+    REFRESH_TOKEN_EXPIRE_MINUTES = '10080'
+    PROJECT_NAME = 'OXALIA API (CI)'
+    ENVIRONMENT = 'test'
+    USE_STUB_MODEL = 'true'
     }
 
     stages {
