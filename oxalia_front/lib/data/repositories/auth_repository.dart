@@ -24,7 +24,7 @@ class AuthRepository {
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
       );
-      return _authService.me();
+      return await _authService.me();
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }
