@@ -57,9 +57,7 @@ class HttpModelAdapter(ModelAdapter):
         async with httpx.AsyncClient(timeout=settings.AI_SERVICE_TIMEOUT_SECONDS) as client:
             with image_path.open("rb") as image_file:
                 files = {"file": (image_path.name, image_file, "application/octet-stream")}
-                response = await client.post(
-                    settings.AI_SERVICE_URL, headers=headers, files=files
-                )
+                response = await client.post(settings.AI_SERVICE_URL, headers=headers, files=files)
             response.raise_for_status()
             payload = response.json()
 
