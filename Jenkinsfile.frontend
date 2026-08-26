@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+
+    environment {
+        FRONTEND_DIR = 'oxalia_front'
+        PATH = "/opt/flutter/bin:${env.PATH}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Frontend Setup') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        if [ ! -f .env ]; then
+                          echo "API_BASE_URL=http://localhost:8000" > .env
+                        fi
+                        flutter pub get
+                    '''
+                }
+            }
+        }
+
+        stage('Frontend Analyze') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'flutter analyze'
+                }
+            }
+        }
+
+        stage('Frontend Tests') {
+            steps {
+                dir("${FRONTEND_DIR}") {
+                    sh 'flutter test'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Frontend CI pipeline finished.'
+        }
+        success {
+            echo 'Frontend CI passed successfully.'
+        }
+        failure {
+            echo 'Frontend CI failed. Check Jenkins logs.'
+        }
+    }
+}
