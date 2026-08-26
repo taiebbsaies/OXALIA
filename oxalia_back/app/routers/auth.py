@@ -107,10 +107,15 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserOut:
     ),
     responses={
         status.HTTP_400_BAD_REQUEST: {
-            "description": "Current password is incorrect, or new password is the same as the old one"
+            "description": (
+                "Current password is incorrect, or new password is the same "
+                "as the old one"
+            )
         },
         status.HTTP_401_UNAUTHORIZED: {"description": "Missing, invalid or expired access token"},
-        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error (password policy)"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Validation error (password policy)"
+        },
     },
 )
 async def change_password(
