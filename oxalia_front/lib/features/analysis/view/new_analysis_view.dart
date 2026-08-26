@@ -37,7 +37,7 @@ class NewAnalysisView extends StatelessWidget {
         viewModel.result != null) {
       return PopScope(
         canPop: false,
-        onPopInvokedWithResult: (_, __) => _safeBack(context),
+        onPopInvokedWithResult: (_, _) => _safeBack(context),
         child: Scaffold(
         backgroundColor: palette.background,
         body: SafeArea(
@@ -61,7 +61,7 @@ class NewAnalysisView extends StatelessWidget {
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (_, __) => _safeBack(context),
+      onPopInvokedWithResult: (_, _) => _safeBack(context),
       child: Scaffold(
       backgroundColor: palette.background,
       body: SafeArea(

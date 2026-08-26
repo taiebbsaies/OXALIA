@@ -81,7 +81,11 @@ async def change_password(db: AsyncSession, user: User, data: ChangePasswordRequ
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="New password must differ from the current password",
         )
-    await user_repository.update_password(db, user, hashed_password=hash_password(data.new_password))
+    await user_repository.update_password(
+        db,
+        user,
+        hashed_password=hash_password(data.new_password),
+    )
 
 
 async def logout(db: AsyncSession, raw_refresh_token: str) -> None:
