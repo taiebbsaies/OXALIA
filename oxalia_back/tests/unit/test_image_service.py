@@ -25,21 +25,23 @@ def upload_dir(monkeypatch, tmp_path):
 
 
 async def test_save_upload_valid_jpeg(upload_dir):
-    stored_path, size_bytes = await image_service.save_upload(make_upload(JPEG_BYTES))
+    stored_path, size_bytes, content_type = await image_service.save_upload(make_upload(JPEG_BYTES))
 
     assert stored_path.exists()
     assert stored_path.read_bytes() == JPEG_BYTES
     assert size_bytes == len(JPEG_BYTES)
+    assert content_type == "image/jpeg"
     assert stored_path.parent == upload_dir
 
 
 async def test_save_upload_valid_png(upload_dir):
-    stored_path, size_bytes = await image_service.save_upload(
+    stored_path, size_bytes, content_type = await image_service.save_upload(
         make_upload(PNG_BYTES, filename="scan.png", content_type="image/png")
     )
 
     assert stored_path.exists()
     assert size_bytes == len(PNG_BYTES)
+    assert content_type == "image/png"
 
 
 async def test_empty_file_rejected(upload_dir):
@@ -76,3 +78,13 @@ async def test_spoofed_content_type_rejected(upload_dir):
 
     assert exc_info.value.status_code == 415
     assert not list(upload_dir.iterdir())
+
+
+async def test_octet_stream_allowed_when_flag_set(upload_dir):
+    stored_path, size_bytes, content_type = await image_service.save_upload(
+        make_upload(JPEG_BYTES, filename="photo", content_type="application/octet-stream"),
+        allow_generic_content_type=True,
+    )
+    assert content_type == "image/jpeg"
+    assert stored_path.exists()
+    assert size_bytes == len(JPEG_BYTES)

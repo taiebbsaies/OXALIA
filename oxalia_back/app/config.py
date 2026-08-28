@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     AI_SERVICE_MODEL: str = "densenet121-res224-all"
     AI_SERVICE_TIMEOUT_SECONDS: int = 120
 
+    # n8n / Telegram ingest (server-to-server). Leave empty to disable ingest.
+    INGEST_API_KEY: str = ""
+
     @property
     def allowed_content_types_list(self) -> list[str]:
         return [t.strip() for t in self.ALLOWED_CONTENT_TYPES.split(",")]

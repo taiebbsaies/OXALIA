@@ -76,6 +76,14 @@ class AuthRepository {
     }
   }
 
+  Future<User> linkTelegram({required String? telegramUserId}) async {
+    try {
+      return await _authService.linkTelegram(telegramUserId: telegramUserId);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
   /// Returns the current user if a valid session exists, null otherwise.
   Future<User?> getCurrentUser() async {
     final accessToken = await _tokenStorage.readAccessToken();

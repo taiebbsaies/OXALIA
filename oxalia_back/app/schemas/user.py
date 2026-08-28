@@ -40,6 +40,28 @@ class ChangePasswordRequest(BaseModel):
         return value
 
 
+class LinkTelegramRequest(BaseModel):
+    """Digits-only Telegram user id from @userinfobot. Empty string unlinks."""
+
+    telegram_user_id: str | None = Field(
+        default=None,
+        max_length=32,
+        examples=["123456789"],
+    )
+
+    @field_validator("telegram_user_id")
+    @classmethod
+    def telegram_id_must_be_digits(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if stripped == "":
+            return None
+        if not stripped.isdigit() or len(stripped) < 5:
+            raise ValueError("Telegram user id must be a numeric id (at least 5 digits)")
+        return stripped
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -49,3 +71,4 @@ class UserOut(BaseModel):
     role: Role
     is_active: bool
     created_at: datetime
+    telegram_user_id: str | None = None

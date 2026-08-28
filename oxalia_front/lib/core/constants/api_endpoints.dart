@@ -10,6 +10,7 @@ class ApiEndpoints {
   static const String logout = '/auth/logout';
   static const String me = '/auth/me';
   static const String mePassword = '/auth/me/password';
+  static const String meTelegram = '/auth/me/telegram';
 
   // Devices / push
   static const String fcmToken = '/devices/fcm-token';

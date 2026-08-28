@@ -19,6 +19,11 @@ async def get_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def get_by_telegram_user_id(db: AsyncSession, telegram_user_id: str) -> User | None:
+    result = await db.execute(select(User).where(User.telegram_user_id == telegram_user_id))
+    return result.scalar_one_or_none()
+
+
 async def create(db: AsyncSession, user: User) -> User:
     db.add(user)
     await db.commit()
@@ -63,6 +68,15 @@ async def update_fields(
         user.role = role
     if is_active is not None:
         user.is_active = is_active
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_telegram_user_id(
+    db: AsyncSession, user: User, telegram_user_id: str | None
+) -> User:
+    user.telegram_user_id = telegram_user_id
     await db.commit()
     await db.refresh(user)
     return user

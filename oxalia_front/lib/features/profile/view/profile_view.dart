@@ -111,6 +111,19 @@ class ProfileView extends StatelessWidget {
             style: TextStyle(color: palette.hint, fontSize: 12),
           ),
 
+          const SizedBox(height: 32),
+          Text(
+            'TELEGRAM',
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const _LinkTelegramCard(),
+
           // ── Security ───────────────────────────────────────────────────
           const SizedBox(height: 32),
           Text(
@@ -143,6 +156,109 @@ class ProfileView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkTelegramCard extends StatefulWidget {
+  const _LinkTelegramCard();
+
+  @override
+  State<_LinkTelegramCard> createState() => _LinkTelegramCardState();
+}
+
+class _LinkTelegramCardState extends State<_LinkTelegramCard> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = context.read<AuthViewModel>().currentUser?.telegramUserId;
+    if (existing != null) {
+      _controller.text = existing;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final viewModel = context.read<AuthViewModel>();
+    final raw = _controller.text.trim();
+    final success = await viewModel.linkTelegram(
+      telegramUserId: raw.isEmpty ? null : raw,
+    );
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            raw.isEmpty
+                ? 'Telegram unlinked.'
+                : 'Telegram linked. Send X-rays to the OXALIA bot with the patient name as caption.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final viewModel = context.watch<AuthViewModel>();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Link Telegram',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Open Telegram, search @userinfobot, send any message, then paste the numeric Id here. '
+            'You chat with the OXALIA bot as a normal contact — you do not create a bot.',
+            style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Telegram user id',
+              hintText: '123456789',
+            ),
+            onChanged: (_) => viewModel.clearTelegramError(),
+          ),
+          if (viewModel.telegramError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              viewModel.telegramError!,
+              style: TextStyle(color: palette.error, fontSize: 13),
+            ),
+          ],
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: 'Save Telegram id',
+            isLoading: viewModel.isLinkingTelegram,
+            onPressed: _save,
+          ),
         ],
       ),
     );

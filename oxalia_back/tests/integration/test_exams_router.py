@@ -316,3 +316,58 @@ async def test_get_exam_image_missing_file_returns_404(client, db):
     resp = await client.get(f"/exams/{exam.id}/image", headers=headers)
 
     assert resp.status_code == 404
+
+
+async def test_ingest_requires_key(client):
+    resp = await client.post(
+        "/exams/ingest",
+        files={"file": ("scan.jpg", JPEG_BYTES, "image/jpeg")},
+        data={"patient_name": "Jane Doe", "telegram_user_id": "123456789"},
+    )
+    assert resp.status_code in (401, 422)
+
+
+async def test_ingest_assigns_exam_to_linked_user(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "INGEST_API_KEY", "test-ingest-key")
+
+    _, headers = await register_and_login(client)
+    link = await client.patch(
+        "/auth/me/telegram",
+        json={"telegram_user_id": "123456789"},
+        headers=headers,
+    )
+    assert link.status_code == 200
+
+    _, other_headers = await register_and_login(client)
+
+    resp = await client.post(
+        "/exams/ingest",
+        files={"file": ("scan.jpg", JPEG_BYTES, "application/octet-stream")},
+        data={"patient_name": "Jean Dupont", "telegram_user_id": "123456789"},
+        headers={"X-Ingest-Key": "test-ingest-key"},
+    )
+    assert resp.status_code == 201
+    exam_id = resp.json()["id"]
+
+    mine = await client.get(f"/exams/{exam_id}", headers=headers)
+    assert mine.status_code == 200
+    assert mine.json()["patient_name"] == "Jean Dupont"
+
+    theirs = await client.get(f"/exams/{exam_id}", headers=other_headers)
+    assert theirs.status_code == 404
+
+
+async def test_ingest_unknown_telegram_returns_404(client, monkeypatch):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "INGEST_API_KEY", "test-ingest-key")
+
+    resp = await client.post(
+        "/exams/ingest",
+        files={"file": ("scan.jpg", JPEG_BYTES, "image/jpeg")},
+        data={"patient_name": "Jane Doe", "telegram_user_id": "999999999"},
+        headers={"X-Ingest-Key": "test-ingest-key"},
+    )
+    assert resp.status_code == 404

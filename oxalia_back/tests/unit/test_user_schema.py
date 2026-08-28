@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.user import UserCreate
+from app.schemas.user import LinkTelegramRequest, UserCreate
 
 
 def test_user_create_accepts_strong_password():
@@ -30,3 +30,13 @@ def test_user_create_rejects_weak_password(password):
             password=password,
             full_name="Dr Test",
         )
+
+
+def test_link_telegram_accepts_digits():
+    assert LinkTelegramRequest(telegram_user_id="123456789").telegram_user_id == "123456789"
+    assert LinkTelegramRequest(telegram_user_id="").telegram_user_id is None
+
+
+def test_link_telegram_rejects_non_digits():
+    with pytest.raises(ValidationError):
+        LinkTelegramRequest(telegram_user_id="not-an-id")

@@ -24,6 +24,8 @@ class AuthViewModel extends ChangeNotifier {
   String? _errorMessage;
   bool _isChangingPassword = false;
   String? _changePasswordError;
+  bool _isLinkingTelegram = false;
+  String? _telegramError;
 
   AuthStatus get status => _status;
   User? get currentUser => _currentUser;
@@ -31,6 +33,8 @@ class AuthViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isChangingPassword => _isChangingPassword;
   String? get changePasswordError => _changePasswordError;
+  bool get isLinkingTelegram => _isLinkingTelegram;
+  String? get telegramError => _telegramError;
 
   /// Called once at app start to route the user to login or home.
   /// Bounded by a hard timeout: a hanging network or storage layer must
@@ -119,6 +123,31 @@ class AuthViewModel extends ChangeNotifier {
   void clearChangePasswordError() {
     if (_changePasswordError == null) return;
     _changePasswordError = null;
+    notifyListeners();
+  }
+
+  Future<bool> linkTelegram({required String? telegramUserId}) async {
+    _isLinkingTelegram = true;
+    _telegramError = null;
+    notifyListeners();
+    try {
+      _currentUser = await _authRepository.linkTelegram(
+        telegramUserId: telegramUserId,
+      );
+      _isLinkingTelegram = false;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      _isLinkingTelegram = false;
+      _telegramError = e.message;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void clearTelegramError() {
+    if (_telegramError == null) return;
+    _telegramError = null;
     notifyListeners();
   }
 
