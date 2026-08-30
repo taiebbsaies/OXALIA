@@ -24,8 +24,8 @@ class AuthViewModel extends ChangeNotifier {
   String? _errorMessage;
   bool _isChangingPassword = false;
   String? _changePasswordError;
-  bool _isLinkingTelegram = false;
-  String? _telegramError;
+  bool _isLinkingPhone = false;
+  String? _phoneError;
 
   AuthStatus get status => _status;
   User? get currentUser => _currentUser;
@@ -33,8 +33,8 @@ class AuthViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isChangingPassword => _isChangingPassword;
   String? get changePasswordError => _changePasswordError;
-  bool get isLinkingTelegram => _isLinkingTelegram;
-  String? get telegramError => _telegramError;
+  bool get isLinkingPhone => _isLinkingPhone;
+  String? get phoneError => _phoneError;
 
   /// Called once at app start to route the user to login or home.
   /// Bounded by a hard timeout: a hanging network or storage layer must
@@ -126,28 +126,26 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> linkTelegram({required String? telegramUserId}) async {
-    _isLinkingTelegram = true;
-    _telegramError = null;
+  Future<bool> linkPhone({required String? phoneNumber}) async {
+    _isLinkingPhone = true;
+    _phoneError = null;
     notifyListeners();
     try {
-      _currentUser = await _authRepository.linkTelegram(
-        telegramUserId: telegramUserId,
-      );
-      _isLinkingTelegram = false;
+      _currentUser = await _authRepository.linkPhone(phoneNumber: phoneNumber);
+      _isLinkingPhone = false;
       notifyListeners();
       return true;
     } on ApiException catch (e) {
-      _isLinkingTelegram = false;
-      _telegramError = e.message;
+      _isLinkingPhone = false;
+      _phoneError = e.message;
       notifyListeners();
       return false;
     }
   }
 
-  void clearTelegramError() {
-    if (_telegramError == null) return;
-    _telegramError = null;
+  void clearPhoneError() {
+    if (_phoneError == null) return;
+    _phoneError = null;
     notifyListeners();
   }
 

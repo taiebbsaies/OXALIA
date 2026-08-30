@@ -64,7 +64,7 @@ async def require_ingest_api_key(x_ingest_key: str = Header(..., alias="X-Ingest
     if not expected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Telegram ingest is not configured",
+            detail="WhatsApp ingest is not configured",
         )
     if not _ingest_keys_match(x_ingest_key, expected):
         raise HTTPException(

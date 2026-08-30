@@ -26,9 +26,7 @@ TAGS_METADATA = [
     },
     {
         "name": "exams",
-        "description": (
-            "X-ray upload, Telegram ingest via n8n, inference status and history."
-        ),
+        "description": ("X-ray upload, WhatsApp ingest via n8n, inference status and history."),
     },
     {
         "name": "devices",

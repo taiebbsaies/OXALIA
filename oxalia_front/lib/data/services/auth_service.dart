@@ -55,10 +55,10 @@ class AuthService {
     );
   }
 
-  Future<User> linkTelegram({required String? telegramUserId}) async {
+  Future<User> linkPhone({required String? phoneNumber}) async {
     final response = await _apiClient.dio.patch(
-      ApiEndpoints.meTelegram,
-      data: {'telegram_user_id': telegramUserId},
+      ApiEndpoints.mePhone,
+      data: {'phone_number': phoneNumber},
     );
     return User.fromJson(response.data as Map<String, dynamic>);
   }

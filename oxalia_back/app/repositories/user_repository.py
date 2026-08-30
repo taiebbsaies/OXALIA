@@ -19,8 +19,8 @@ async def get_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
     return result.scalar_one_or_none()
 
 
-async def get_by_telegram_user_id(db: AsyncSession, telegram_user_id: str) -> User | None:
-    result = await db.execute(select(User).where(User.telegram_user_id == telegram_user_id))
+async def get_by_phone_number(db: AsyncSession, phone_number: str) -> User | None:
+    result = await db.execute(select(User).where(User.phone_number == phone_number))
     return result.scalar_one_or_none()
 
 
@@ -73,10 +73,8 @@ async def update_fields(
     return user
 
 
-async def update_telegram_user_id(
-    db: AsyncSession, user: User, telegram_user_id: str | None
-) -> User:
-    user.telegram_user_id = telegram_user_id
+async def update_phone_number(db: AsyncSession, user: User, phone_number: str | None) -> User:
+    user.phone_number = phone_number
     await db.commit()
     await db.refresh(user)
     return user

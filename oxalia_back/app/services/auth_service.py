@@ -13,7 +13,7 @@ from app.models.refresh_token import RefreshToken
 from app.models.user import Role, User
 from app.repositories import refresh_token_repository, user_repository
 from app.schemas.auth import TokenPair
-from app.schemas.user import ChangePasswordRequest, LinkTelegramRequest, UserCreate
+from app.schemas.user import ChangePasswordRequest, LinkPhoneRequest, UserCreate
 
 
 async def register(db: AsyncSession, data: UserCreate) -> User:
@@ -88,16 +88,16 @@ async def change_password(db: AsyncSession, user: User, data: ChangePasswordRequ
     )
 
 
-async def link_telegram(db: AsyncSession, user: User, data: LinkTelegramRequest) -> User:
-    new_id = data.telegram_user_id
-    if new_id is not None:
-        holder = await user_repository.get_by_telegram_user_id(db, new_id)
+async def link_phone(db: AsyncSession, user: User, data: LinkPhoneRequest) -> User:
+    new_phone = data.phone_number
+    if new_phone is not None:
+        holder = await user_repository.get_by_phone_number(db, new_phone)
         if holder is not None and holder.id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="This Telegram account is already linked to another user",
+                detail="This phone number is already linked to another user",
             )
-    return await user_repository.update_telegram_user_id(db, user, new_id)
+    return await user_repository.update_phone_number(db, user, new_phone)
 
 
 async def logout(db: AsyncSession, raw_refresh_token: str) -> None:

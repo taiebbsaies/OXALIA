@@ -76,9 +76,9 @@ class AuthRepository {
     }
   }
 
-  Future<User> linkTelegram({required String? telegramUserId}) async {
+  Future<User> linkPhone({required String? phoneNumber}) async {
     try {
-      return await _authService.linkTelegram(telegramUserId: telegramUserId);
+      return await _authService.linkPhone(phoneNumber: phoneNumber);
     } on DioException catch (e) {
       throw ApiException.fromDioException(e);
     }

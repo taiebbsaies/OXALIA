@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     AI_SERVICE_MODEL: str = "densenet121-res224-all"
     AI_SERVICE_TIMEOUT_SECONDS: int = 120
 
-    # n8n / Telegram ingest (server-to-server). Leave empty to disable ingest.
+    # n8n / WhatsApp ingest (server-to-server). Leave empty to disable ingest.
     INGEST_API_KEY: str = ""
 
     @property

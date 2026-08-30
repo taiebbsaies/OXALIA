@@ -113,7 +113,7 @@ class ProfileView extends StatelessWidget {
 
           const SizedBox(height: 32),
           Text(
-            'TELEGRAM',
+            'WHATSAPP',
             style: TextStyle(
               color: palette.textSecondary,
               fontSize: 12,
@@ -122,7 +122,7 @@ class ProfileView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const _LinkTelegramCard(),
+          const _LinkWhatsAppCard(),
 
           // ── Security ───────────────────────────────────────────────────
           const SizedBox(height: 32),
@@ -162,22 +162,22 @@ class ProfileView extends StatelessWidget {
   }
 }
 
-class _LinkTelegramCard extends StatefulWidget {
-  const _LinkTelegramCard();
+class _LinkWhatsAppCard extends StatefulWidget {
+  const _LinkWhatsAppCard();
 
   @override
-  State<_LinkTelegramCard> createState() => _LinkTelegramCardState();
+  State<_LinkWhatsAppCard> createState() => _LinkWhatsAppCardState();
 }
 
-class _LinkTelegramCardState extends State<_LinkTelegramCard> {
+class _LinkWhatsAppCardState extends State<_LinkWhatsAppCard> {
   final _controller = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    final existing = context.read<AuthViewModel>().currentUser?.telegramUserId;
-    if (existing != null) {
-      _controller.text = existing;
+    final existing = context.read<AuthViewModel>().currentUser?.phoneNumber;
+    if (existing != null && existing.isNotEmpty) {
+      _controller.text = '+$existing';
     }
   }
 
@@ -190,8 +190,8 @@ class _LinkTelegramCardState extends State<_LinkTelegramCard> {
   Future<void> _save() async {
     final viewModel = context.read<AuthViewModel>();
     final raw = _controller.text.trim();
-    final success = await viewModel.linkTelegram(
-      telegramUserId: raw.isEmpty ? null : raw,
+    final success = await viewModel.linkPhone(
+      phoneNumber: raw.isEmpty ? null : raw,
     );
     if (!mounted) return;
     if (success) {
@@ -199,8 +199,8 @@ class _LinkTelegramCardState extends State<_LinkTelegramCard> {
         SnackBar(
           content: Text(
             raw.isEmpty
-                ? 'Telegram unlinked.'
-                : 'Telegram linked. Send X-rays to the OXALIA bot with the patient name as caption.',
+                ? 'WhatsApp unlinked.'
+                : 'WhatsApp linked. Send X-rays to OXALIA with the patient name as caption.',
           ),
         ),
       );
@@ -223,7 +223,7 @@ class _LinkTelegramCardState extends State<_LinkTelegramCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Link Telegram',
+            'Link WhatsApp',
             style: TextStyle(
               color: palette.textPrimary,
               fontSize: 16,
@@ -232,31 +232,31 @@ class _LinkTelegramCardState extends State<_LinkTelegramCard> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Open Telegram, search @userinfobot, send any message, then paste the numeric Id here. '
-            'You chat with the OXALIA bot as a normal contact — you do not create a bot.',
+            'Use the same international number as this phone WhatsApp account '
+            '(country code included, e.g. +21612345678). Each doctor only sees their own scans.',
             style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _controller,
-            keyboardType: TextInputType.number,
+            keyboardType: TextInputType.phone,
             decoration: const InputDecoration(
-              labelText: 'Telegram user id',
-              hintText: '123456789',
+              labelText: 'WhatsApp number',
+              hintText: '+21612345678',
             ),
-            onChanged: (_) => viewModel.clearTelegramError(),
+            onChanged: (_) => viewModel.clearPhoneError(),
           ),
-          if (viewModel.telegramError != null) ...[
+          if (viewModel.phoneError != null) ...[
             const SizedBox(height: 8),
             Text(
-              viewModel.telegramError!,
+              viewModel.phoneError!,
               style: TextStyle(color: palette.error, fontSize: 13),
             ),
           ],
           const SizedBox(height: 16),
           PrimaryButton(
-            label: 'Save Telegram id',
-            isLoading: viewModel.isLinkingTelegram,
+            label: 'Save WhatsApp number',
+            isLoading: viewModel.isLinkingPhone,
             onPressed: _save,
           ),
         ],

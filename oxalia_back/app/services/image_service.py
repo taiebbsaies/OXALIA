@@ -62,9 +62,7 @@ async def save_upload(
     Returns (stored_path, size_bytes, content_type).
     """
     contents = await file.read()
-    content_type = _validate(
-        file, contents, allow_generic_content_type=allow_generic_content_type
-    )
+    content_type = _validate(file, contents, allow_generic_content_type=allow_generic_content_type)
     size_bytes = len(contents)
 
     upload_dir = Path(settings.UPLOAD_DIR)

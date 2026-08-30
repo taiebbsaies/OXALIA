@@ -23,6 +23,7 @@ from app.schemas.exam import ExamOut, ExamStatsOut, InferenceResultOut
 from app.services import image_service
 from app.services.inference_orchestrator import run_inference
 from app.services.patient_naming import filename_from_patient_name, normalize_patient_name
+from app.services.phone_number import is_valid_phone_number, normalize_phone_number
 
 router = APIRouter()
 
@@ -91,11 +92,11 @@ async def upload_exam(
     "/ingest",
     response_model=ExamOut,
     status_code=status.HTTP_201_CREATED,
-    summary="Ingest an X-ray from n8n / Telegram",
+    summary="Ingest an X-ray from n8n / WhatsApp",
     description=(
         "Server-to-server upload. Authenticate with `X-Ingest-Key` (not a doctor password). "
-        "Looks up the clinician by `telegram_user_id` and stores the exam under that owner. "
-        "Use the Telegram caption as `patient_name`."
+        "Looks up the clinician by `phone_number` (WhatsApp sender) and stores the exam "
+        "under that owner. Use the WhatsApp caption as `patient_name`."
     ),
     dependencies=[Depends(require_ingest_api_key)],
 )
@@ -103,21 +104,21 @@ async def ingest_exam(
     background_tasks: BackgroundTasks,
     file: UploadFile,
     patient_name: str = Form(..., min_length=1, max_length=255),
-    telegram_user_id: str = Form(..., min_length=5, max_length=32),
+    phone_number: str = Form(..., min_length=8, max_length=20),
     db: AsyncSession = Depends(get_db),
 ) -> ExamOut:
-    telegram_id = telegram_user_id.strip()
-    if not telegram_id.isdigit():
+    phone = normalize_phone_number(phone_number)
+    if not is_valid_phone_number(phone):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="telegram_user_id must be numeric",
+            detail="phone_number must be an international number with country code",
         )
 
-    owner = await user_repository.get_by_telegram_user_id(db, telegram_id)
+    owner = await user_repository.get_by_phone_number(db, phone)
     if owner is None or not owner.is_active:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No OXALIA account is linked to this Telegram user",
+            detail="No OXALIA account is linked to this WhatsApp number",
         )
 
     return await _create_exam_from_upload(

@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.user import Role
+from app.services.phone_number import is_valid_phone_number, normalize_phone_number
 
 _PASSWORD_POLICY = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$")
 
@@ -40,26 +41,30 @@ class ChangePasswordRequest(BaseModel):
         return value
 
 
-class LinkTelegramRequest(BaseModel):
-    """Digits-only Telegram user id from @userinfobot. Empty string unlinks."""
+class LinkPhoneRequest(BaseModel):
+    """WhatsApp number in international form. Empty string unlinks."""
 
-    telegram_user_id: str | None = Field(
+    phone_number: str | None = Field(
         default=None,
-        max_length=32,
-        examples=["123456789"],
+        max_length=20,
+        examples=["+21612345678"],
     )
 
-    @field_validator("telegram_user_id")
+    @field_validator("phone_number")
     @classmethod
-    def telegram_id_must_be_digits(cls, value: str | None) -> str | None:
+    def phone_must_be_international(cls, value: str | None) -> str | None:
         if value is None:
             return None
         stripped = value.strip()
         if stripped == "":
             return None
-        if not stripped.isdigit() or len(stripped) < 5:
-            raise ValueError("Telegram user id must be a numeric id (at least 5 digits)")
-        return stripped
+        digits = normalize_phone_number(stripped)
+        if not is_valid_phone_number(digits):
+            raise ValueError(
+                "Phone must be an international number with country code "
+                "(8-15 digits, e.g. +21612345678)"
+            )
+        return digits
 
 
 class UserOut(BaseModel):
@@ -71,4 +76,4 @@ class UserOut(BaseModel):
     role: Role
     is_active: bool
     created_at: datetime
-    telegram_user_id: str | None = None
+    phone_number: str | None = None

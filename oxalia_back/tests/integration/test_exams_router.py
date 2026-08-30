@@ -322,7 +322,7 @@ async def test_ingest_requires_key(client):
     resp = await client.post(
         "/exams/ingest",
         files={"file": ("scan.jpg", JPEG_BYTES, "image/jpeg")},
-        data={"patient_name": "Jane Doe", "telegram_user_id": "123456789"},
+        data={"patient_name": "Jane Doe", "phone_number": "21612345678"},
     )
     assert resp.status_code in (401, 422)
 
@@ -334,8 +334,8 @@ async def test_ingest_assigns_exam_to_linked_user(client, monkeypatch):
 
     _, headers = await register_and_login(client)
     link = await client.patch(
-        "/auth/me/telegram",
-        json={"telegram_user_id": "123456789"},
+        "/auth/me/phone",
+        json={"phone_number": "+21612345678"},
         headers=headers,
     )
     assert link.status_code == 200
@@ -345,7 +345,7 @@ async def test_ingest_assigns_exam_to_linked_user(client, monkeypatch):
     resp = await client.post(
         "/exams/ingest",
         files={"file": ("scan.jpg", JPEG_BYTES, "application/octet-stream")},
-        data={"patient_name": "Jean Dupont", "telegram_user_id": "123456789"},
+        data={"patient_name": "Jean Dupont", "phone_number": "21612345678"},
         headers={"X-Ingest-Key": "test-ingest-key"},
     )
     assert resp.status_code == 201
@@ -359,7 +359,7 @@ async def test_ingest_assigns_exam_to_linked_user(client, monkeypatch):
     assert theirs.status_code == 404
 
 
-async def test_ingest_unknown_telegram_returns_404(client, monkeypatch):
+async def test_ingest_unknown_phone_returns_404(client, monkeypatch):
     from app.config import settings
 
     monkeypatch.setattr(settings, "INGEST_API_KEY", "test-ingest-key")
@@ -367,7 +367,7 @@ async def test_ingest_unknown_telegram_returns_404(client, monkeypatch):
     resp = await client.post(
         "/exams/ingest",
         files={"file": ("scan.jpg", JPEG_BYTES, "image/jpeg")},
-        data={"patient_name": "Jane Doe", "telegram_user_id": "999999999"},
+        data={"patient_name": "Jane Doe", "phone_number": "21699999999"},
         headers={"X-Ingest-Key": "test-ingest-key"},
     )
     assert resp.status_code == 404
