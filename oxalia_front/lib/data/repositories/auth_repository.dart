@@ -76,6 +76,14 @@ class AuthRepository {
     }
   }
 
+  Future<User> linkPhone({required String? phoneNumber}) async {
+    try {
+      return await _authService.linkPhone(phoneNumber: phoneNumber);
+    } on DioException catch (e) {
+      throw ApiException.fromDioException(e);
+    }
+  }
+
   /// Returns the current user if a valid session exists, null otherwise.
   Future<User?> getCurrentUser() async {
     final accessToken = await _tokenStorage.readAccessToken();

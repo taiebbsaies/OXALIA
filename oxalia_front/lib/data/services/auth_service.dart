@@ -54,4 +54,12 @@ class AuthService {
       data: {'old_password': oldPassword, 'new_password': newPassword},
     );
   }
+
+  Future<User> linkPhone({required String? phoneNumber}) async {
+    final response = await _apiClient.dio.patch(
+      ApiEndpoints.mePhone,
+      data: {'phone_number': phoneNumber},
+    );
+    return User.fromJson(response.data as Map<String, dynamic>);
+  }
 }

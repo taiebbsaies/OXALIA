@@ -14,17 +14,51 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_ingest_api_key
 from app.database import get_db
 from app.models.exam import Exam, ExamStatus
 from app.models.user import User
-from app.repositories import exam_repository, inference_result_repository
+from app.repositories import exam_repository, inference_result_repository, user_repository
 from app.schemas.exam import ExamOut, ExamStatsOut, InferenceResultOut
 from app.services import image_service
 from app.services.inference_orchestrator import run_inference
 from app.services.patient_naming import filename_from_patient_name, normalize_patient_name
+from app.services.phone_number import is_valid_phone_number, normalize_phone_number
 
 router = APIRouter()
+
+
+async def _create_exam_from_upload(
+    *,
+    db: AsyncSession,
+    background_tasks: BackgroundTasks,
+    file: UploadFile,
+    patient_name: str,
+    owner: User,
+    allow_generic_content_type: bool = False,
+) -> ExamOut:
+    cleaned_name = normalize_patient_name(patient_name)
+    if not cleaned_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Patient name is required",
+        )
+
+    stored_path, size_bytes, content_type = await image_service.save_upload(
+        file, allow_generic_content_type=allow_generic_content_type
+    )
+
+    exam = Exam(
+        owner_id=owner.id,
+        patient_name=cleaned_name,
+        original_filename=filename_from_patient_name(cleaned_name),
+        storage_path=str(stored_path),
+        content_type=content_type,
+        size_bytes=size_bytes,
+    )
+    exam = await exam_repository.create(db, exam)
+    background_tasks.add_task(run_inference, exam.id, stored_path)
+    return ExamOut.model_validate(exam)
 
 
 @router.post(
@@ -45,28 +79,56 @@ async def upload_exam(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ExamOut:
-    cleaned_name = normalize_patient_name(patient_name)
-    if not cleaned_name:
+    return await _create_exam_from_upload(
+        db=db,
+        background_tasks=background_tasks,
+        file=file,
+        patient_name=patient_name,
+        owner=current_user,
+    )
+
+
+@router.post(
+    "/ingest",
+    response_model=ExamOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ingest an X-ray from n8n / WhatsApp",
+    description=(
+        "Server-to-server upload. Authenticate with `X-Ingest-Key` (not a doctor password). "
+        "Looks up the clinician by `phone_number` (WhatsApp sender) and stores the exam "
+        "under that owner. Use the WhatsApp caption as `patient_name`."
+    ),
+    dependencies=[Depends(require_ingest_api_key)],
+)
+async def ingest_exam(
+    background_tasks: BackgroundTasks,
+    file: UploadFile,
+    patient_name: str = Form(..., min_length=1, max_length=255),
+    phone_number: str = Form(..., min_length=8, max_length=20),
+    db: AsyncSession = Depends(get_db),
+) -> ExamOut:
+    phone = normalize_phone_number(phone_number)
+    if not is_valid_phone_number(phone):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Patient name is required",
+            detail="phone_number must be an international number with country code",
         )
 
-    stored_path, size_bytes = await image_service.save_upload(file)
+    owner = await user_repository.get_by_phone_number(db, phone)
+    if owner is None or not owner.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No OXALIA account is linked to this WhatsApp number",
+        )
 
-    exam = Exam(
-        owner_id=current_user.id,
-        patient_name=cleaned_name,
-        original_filename=filename_from_patient_name(cleaned_name),
-        storage_path=str(stored_path),
-        content_type=file.content_type or "application/octet-stream",
-        size_bytes=size_bytes,
+    return await _create_exam_from_upload(
+        db=db,
+        background_tasks=background_tasks,
+        file=file,
+        patient_name=patient_name,
+        owner=owner,
+        allow_generic_content_type=True,
     )
-    exam = await exam_repository.create(db, exam)
-
-    background_tasks.add_task(run_inference, exam.id, stored_path)
-
-    return ExamOut.model_validate(exam)
 
 
 @router.get(

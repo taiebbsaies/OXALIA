@@ -1,7 +1,8 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.user import UserCreate
+from app.schemas.user import LinkPhoneRequest, UserCreate
+from app.services.phone_number import normalize_phone_number
 
 
 def test_user_create_accepts_strong_password():
@@ -30,3 +31,17 @@ def test_user_create_rejects_weak_password(password):
             password=password,
             full_name="Dr Test",
         )
+
+
+def test_link_phone_normalizes_international():
+    assert LinkPhoneRequest(phone_number="+216 12 345 678").phone_number == "21612345678"
+    assert LinkPhoneRequest(phone_number="").phone_number is None
+
+
+def test_link_phone_rejects_invalid():
+    with pytest.raises(ValidationError):
+        LinkPhoneRequest(phone_number="not-a-phone")
+
+
+def test_normalize_phone_strips_00_prefix():
+    assert normalize_phone_number("0021612345678") == "21612345678"

@@ -1,10 +1,12 @@
+import hmac
 import uuid
 from collections.abc import Callable
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.security import decode_access_token
 from app.database import get_db
 from app.models.user import Role, User
@@ -47,3 +49,25 @@ def require_role(*roles: Role) -> Callable[[User], User]:
         return current_user
 
     return dependency
+
+
+def _ingest_keys_match(provided: str, expected: str) -> bool:
+    a = provided.encode("utf-8")
+    b = expected.encode("utf-8")
+    if len(a) != len(b):
+        return False
+    return hmac.compare_digest(a, b)
+
+
+async def require_ingest_api_key(x_ingest_key: str = Header(..., alias="X-Ingest-Key")) -> None:
+    expected = settings.INGEST_API_KEY
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WhatsApp ingest is not configured",
+        )
+    if not _ingest_keys_match(x_ingest_key, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid ingest key",
+        )

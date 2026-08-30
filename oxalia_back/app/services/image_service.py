@@ -19,7 +19,8 @@ def _detect_real_content_type(contents: bytes) -> str | None:
     return None
 
 
-def _validate(file: UploadFile, contents: bytes) -> None:
+def _validate(file: UploadFile, contents: bytes, *, allow_generic_content_type: bool) -> str:
+    """Return the detected image content type after validation."""
     size_bytes = len(contents)
 
     if size_bytes == 0:
@@ -35,11 +36,14 @@ def _validate(file: UploadFile, contents: bytes) -> None:
             detail=f"File exceeds {settings.MAX_UPLOAD_SIZE_MB} MB limit",
         )
 
-    if file.content_type not in settings.allowed_content_types_list:
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail=f"Unsupported content type: {file.content_type}",
-        )
+    declared = file.content_type or ""
+    generic = declared in ("", "application/octet-stream")
+    if not (allow_generic_content_type and generic):
+        if declared not in settings.allowed_content_types_list:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail=f"Unsupported content type: {file.content_type}",
+            )
 
     real_content_type = _detect_real_content_type(contents)
     if real_content_type is None or real_content_type not in settings.allowed_content_types_list:
@@ -47,23 +51,28 @@ def _validate(file: UploadFile, contents: bytes) -> None:
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="File content does not match an allowed image format",
         )
+    return real_content_type
 
 
-async def save_upload(file: UploadFile) -> tuple[Path, int]:
+async def save_upload(
+    file: UploadFile, *, allow_generic_content_type: bool = False
+) -> tuple[Path, int, str]:
     """Validate and persist an uploaded image to disk.
 
-    Returns (stored_path, size_bytes).
+    Returns (stored_path, size_bytes, content_type).
     """
     contents = await file.read()
-    _validate(file, contents)
+    content_type = _validate(file, contents, allow_generic_content_type=allow_generic_content_type)
     size_bytes = len(contents)
 
     upload_dir = Path(settings.UPLOAD_DIR)
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    extension = Path(file.filename or "").suffix or ".bin"
+    extension = Path(file.filename or "").suffix
+    if not extension:
+        extension = ".jpg" if content_type == "image/jpeg" else ".png"
     stored_name = f"{uuid.uuid4().hex}{extension}"
     stored_path = upload_dir / stored_name
 
     stored_path.write_bytes(contents)
-    return stored_path, size_bytes
+    return stored_path, size_bytes, content_type

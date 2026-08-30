@@ -7,6 +7,7 @@ class User {
     required this.role,
     required this.isActive,
     required this.createdAt,
+    this.phoneNumber,
   });
 
   final String id;
@@ -15,6 +16,7 @@ class User {
   final String role;
   final bool isActive;
   final DateTime createdAt;
+  final String? phoneNumber;
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
@@ -24,6 +26,7 @@ class User {
       role: json['role'] as String,
       isActive: json['is_active'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
+      phoneNumber: json['phone_number'] as String?,
     );
   }
 }

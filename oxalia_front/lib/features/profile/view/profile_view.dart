@@ -111,6 +111,19 @@ class ProfileView extends StatelessWidget {
             style: TextStyle(color: palette.hint, fontSize: 12),
           ),
 
+          const SizedBox(height: 32),
+          Text(
+            'WHATSAPP',
+            style: TextStyle(
+              color: palette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1.4,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const _LinkWhatsAppCard(),
+
           // ── Security ───────────────────────────────────────────────────
           const SizedBox(height: 32),
           Text(
@@ -143,6 +156,109 @@ class ProfileView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkWhatsAppCard extends StatefulWidget {
+  const _LinkWhatsAppCard();
+
+  @override
+  State<_LinkWhatsAppCard> createState() => _LinkWhatsAppCardState();
+}
+
+class _LinkWhatsAppCardState extends State<_LinkWhatsAppCard> {
+  final _controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = context.read<AuthViewModel>().currentUser?.phoneNumber;
+    if (existing != null && existing.isNotEmpty) {
+      _controller.text = '+$existing';
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final viewModel = context.read<AuthViewModel>();
+    final raw = _controller.text.trim();
+    final success = await viewModel.linkPhone(
+      phoneNumber: raw.isEmpty ? null : raw,
+    );
+    if (!mounted) return;
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            raw.isEmpty
+                ? 'WhatsApp unlinked.'
+                : 'WhatsApp linked. Send X-rays to OXALIA with the patient name as caption.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final viewModel = context.watch<AuthViewModel>();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Link WhatsApp',
+            style: TextStyle(
+              color: palette.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use the same international number as this phone WhatsApp account '
+            '(country code included, e.g. +21612345678). Each doctor only sees their own scans.',
+            style: TextStyle(color: palette.textSecondary, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _controller,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'WhatsApp number',
+              hintText: '+21612345678',
+            ),
+            onChanged: (_) => viewModel.clearPhoneError(),
+          ),
+          if (viewModel.phoneError != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              viewModel.phoneError!,
+              style: TextStyle(color: palette.error, fontSize: 13),
+            ),
+          ],
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: 'Save WhatsApp number',
+            isLoading: viewModel.isLinkingPhone,
+            onPressed: _save,
+          ),
         ],
       ),
     );

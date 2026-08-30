@@ -19,6 +19,11 @@ async def get_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def get_by_phone_number(db: AsyncSession, phone_number: str) -> User | None:
+    result = await db.execute(select(User).where(User.phone_number == phone_number))
+    return result.scalar_one_or_none()
+
+
 async def create(db: AsyncSession, user: User) -> User:
     db.add(user)
     await db.commit()
@@ -63,6 +68,13 @@ async def update_fields(
         user.role = role
     if is_active is not None:
         user.is_active = is_active
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def update_phone_number(db: AsyncSession, user: User, phone_number: str | None) -> User:
+    user.phone_number = phone_number
     await db.commit()
     await db.refresh(user)
     return user

@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.user import Role
+from app.services.phone_number import is_valid_phone_number, normalize_phone_number
 
 _PASSWORD_POLICY = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,128}$")
 
@@ -40,6 +41,32 @@ class ChangePasswordRequest(BaseModel):
         return value
 
 
+class LinkPhoneRequest(BaseModel):
+    """WhatsApp number in international form. Empty string unlinks."""
+
+    phone_number: str | None = Field(
+        default=None,
+        max_length=20,
+        examples=["+21612345678"],
+    )
+
+    @field_validator("phone_number")
+    @classmethod
+    def phone_must_be_international(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if stripped == "":
+            return None
+        digits = normalize_phone_number(stripped)
+        if not is_valid_phone_number(digits):
+            raise ValueError(
+                "Phone must be an international number with country code "
+                "(8-15 digits, e.g. +21612345678)"
+            )
+        return digits
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -49,3 +76,4 @@ class UserOut(BaseModel):
     role: Role
     is_active: bool
     created_at: datetime
+    phone_number: str | None = None

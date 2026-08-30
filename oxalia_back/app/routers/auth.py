@@ -5,7 +5,7 @@ from app.core.deps import get_current_user, require_role
 from app.database import get_db
 from app.models.user import Role, User
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenPair
-from app.schemas.user import ChangePasswordRequest, UserCreate, UserOut
+from app.schemas.user import ChangePasswordRequest, LinkPhoneRequest, UserCreate, UserOut
 from app.services import auth_service
 
 router = APIRouter()
@@ -123,6 +123,25 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ) -> None:
     await auth_service.change_password(db, current_user, data)
+
+
+@router.patch(
+    "/me/phone",
+    response_model=UserOut,
+    summary="Link or unlink a WhatsApp phone number",
+    description=(
+        "Stores the clinician's international phone number (digits with country code). "
+        "n8n uses WhatsApp's sender number to attribute ingested X-rays. "
+        "Send `phone_number: null` or an empty string to unlink."
+    ),
+)
+async def link_phone(
+    data: LinkPhoneRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> UserOut:
+    user = await auth_service.link_phone(db, current_user, data)
+    return UserOut.model_validate(user)
 
 
 @router.get(
