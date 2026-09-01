@@ -3,7 +3,15 @@
 #   docker compose up -d
 #   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
 #
-# Jenkins UI: http://localhost:8081
+# Jenkins UI:    http://localhost:8081
+# SonarQube UI:  http://localhost:9000  (first login: admin / admin)
+#
+# After first SonarQube login, generate a token (My Account → Security)
+# and put it in oxalia_back/.env as:
+#   SONAR_TOKEN=squ_...
+# then recreate Jenkins so it picks up the token:
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+#
 # Rebuild the Jenkins image after Dockerfile changes:
 #   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build
 
@@ -17,10 +25,42 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      sonarqube:
+        condition: service_healthy
     volumes:
       - jenkins_home:/var/jenkins_home
     environment:
       JAVA_OPTS: "-Djenkins.install.runSetupWizard=true"
+      SONAR_HOST_URL: http://sonarqube:9000
+      SONAR_TOKEN: ${SONAR_TOKEN:-}
+
+  sonarqube:
+    image: sonarqube:community
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:9000/api/system/status | grep -q '\"status\":\"UP\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
 
 volumes:
   jenkins_home:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
