@@ -1,0 +1,255 @@
+{
+  "name": "Oxalia",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "oxalia-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a41dcb71-6222-4c4c-9102-1efd6280705e",
+      "name": "Webhook",
+      "webhookId": "f58670c1-84ee-415a-8fa9-8a3cd3c9f346"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query[\"hub.challenge\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "359b55b9-0c2c-402b-9727-43a573911a70",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "oxalia-whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        64
+      ],
+      "id": "ecd20098-aa28-4171-ac93-604e983ea13b",
+      "name": "Webhook1",
+      "webhookId": "1fdb056a-7d4a-45f6-bd8d-d779cca96774"
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v21.0/{{ $json.body.entry[0].changes[0].value.messages[0].image.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EAGOvfUntBZAcBSVktHqQ5K3XsWrDANL9pLKrlEMGaOnlLtv0AV8ZAUoZAxMUAc4R8k9IcbvXhRySxOHc7FiZBmZCehPLgagmSZASFtoJ0ap35sJ6jpNgDXjhMl8gCfbyWcK2oyUNklyGTM4BdjpKgeeEsHYCA0yox2MwJJeih0UE4Qy3Oi4XtDvG2VVK77TnUiutrymDLxozoZC1ZBGyAFiAJXWFWS8DgjdIVb0xsMSq431jBLejACPXvj1HJCA7H4nx0YGMQlZBRr09LedYVwnqNQQZDZD"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        800,
+        -16
+      ],
+      "id": "ecba2f99-43c0-464d-a465-28e58cd32141",
+      "name": "get media url"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization ",
+              "value": "Bearer EAGOvfUntBZAcBSVktHqQ5K3XsWrDANL9pLKrlEMGaOnlLtv0AV8ZAUoZAxMUAc4R8k9IcbvXhRySxOHc7FiZBmZCehPLgagmSZASFtoJ0ap35sJ6jpNgDXjhMl8gCfbyWcK2oyUNklyGTM4BdjpKgeeEsHYCA0yox2MwJJeih0UE4Qy3Oi4XtDvG2VVK77TnUiutrymDLxozoZC1ZBGyAFiAJXWFWS8DgjdIVb0xsMSq431jBLejACPXvj1HJCA7H4nx0YGMQlZBRr09LedYVwnqNQQZDZD"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1024,
+        -16
+      ],
+      "id": "def17d1d-c8de-4e13-aa4c-6c2c382c5f9b",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oxalia.onrender.com/exams/ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Ingest-Key",
+              "value": "gxOIChU9LKnqcN6uKvFAd92htl1F9DzQ4Byqf4-KgZg"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "patient_name",
+              "value": "={{ $('Webhook1').item.json.body.entry[0].changes[0].value.messages[0].image.caption }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $('Webhook1').item.json.body.entry[0].changes[0].value.messages[0].from }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1248,
+        -16
+      ],
+      "id": "10453284-8d8f-4c34-a21b-6da284b085e8",
+      "name": "OXALIA ingest"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/1324232224103575/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EAGOvfUntBZAcBSVktHqQ5K3XsWrDANL9pLKrlEMGaOnlLtv0AV8ZAUoZAxMUAc4R8k9IcbvXhRySxOHc7FiZBmZCehPLgagmSZASFtoJ0ap35sJ6jpNgDXjhMl8gCfbyWcK2oyUNklyGTM4BdjpKgeeEsHYCA0yox2MwJJeih0UE4Qy3Oi4XtDvG2VVK77TnUiutrymDLxozoZC1ZBGyAFiAJXWFWS8DgjdIVb0xsMSq431jBLejACPXvj1HJCA7H4nx0YGMQlZBRr09LedYVwnqNQQZDZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $('Webhook1').item.json.body.entry[0].changes[0].value.messages[0].from }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"X-ray received. Open OXALIA to see the analysis.\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1472,
+        -16
+      ],
+      "id": "6f71ee0b-649b-4f41-99c3-680b6fd9f630",
+      "name": "WhatsApp reply OK"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "get media url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "get media url": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "OXALIA ingest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OXALIA ingest": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp reply OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ffcbd47c-6564-4fda-bf70-1b1c64185ac9",
+  "meta": {
+    "instanceId": "5f589077289293f80d1ed6cb778faf626692b355d1f22733a3943a6b489d89db"
+  },
+  "nodeGroups": [],
+  "id": "2uY4FJOWI2HyU0L4",
+  "tags": []
+}
